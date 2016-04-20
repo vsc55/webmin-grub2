@@ -1,0 +1,65 @@
+index_intro=GRUB2 is a boot loader with support for modern day computer systems. It is meant to replace the older GRUB boot loader (now referred to as "GRUB Legacy")
+index_title=GRand Unified Bootloader 2
+index_version=GRUB version $1
+index_notfound=GRUB2 boot loader could not be found, as stated in your configuration<tt>$1</tt>:
+index_either= Either
+index_modify=<br /><br /> 1) Module configuration is probably incorrect - click <a href="$1">HERE</a> to modify it
+index_install=, or <br /><br /> 2)
+index_mismatch=<p>GRUB2 is installed at <tt>$1</tt>, but the path in your configuration settings is <tt>$2</tt>.</p>
+index_noentrys=No entries yet!
+index_short=GRUB2
+
+tab_files=Files Information
+tab_existing=Entries
+tab_environ=Environment
+tab_other=other
+
+env_sel=Select
+env_var=Variable
+env_value=Value
+env_delete=Delete
+env_edit=Edit Environment
+env_was=Original value $1
+	
+noversion=n/a
+add=Add new
+del=Delete this:
+edit=Edit
+
+
+
+index_defserv=Default Host
+
+index_delete=Select
+index_enabled=Active (click to toggle)?
+index_name=Server Name
+index_addr=Address
+index_port=Port
+index_root=Document Root
+index_url=URL
+index_view=View
+
+disa=Active : (click to Disable <i class="fa fa-unlink"></i>)
+enab=(click to Enable <i class="fa fa-link"></i>)
+
+gl_edit=Edit nginx.conf
+gl_proxy=Edit proxy.conf
+gl_details=View nginx details
+
+manual_title=Edit Config File
+manual_header=Use the text box below to manually edit the nginx config file for $1.
+
+nginx_apply=Apply Changes
+nginx_stop=Stop nginx
+nginx_start=Start nginx
+
+#stop_nginx=nginx stopped manually
+stop_epid=Failed to open PID file
+stop_esig=Failed to send SIGTERM to process $1
+
+#start_nginx=nginx started manually
+start_err=Failed to start nginx
+
+test_err=Couldn't test nginx configuration
+
+sep_by=, separated by

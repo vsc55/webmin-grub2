@@ -1,0 +1,9 @@
+cfg_file=Main Configuration file (commonly `/boot/grub2/grub.cfg`),8
+grub2_dir=Directory that contains `grub2-install` and other GRUB2 commands (commonly `/usr/bin`),7,,,/usr/bin
+cfgd_dir=Directory that contains the other configuration files (commonly `/etc/grub.d`),7
+dmap_file=`Device.map` file (commonly `/boot/grub2/device.map`),8,,/boot/grub2/device.map
+fonts_dir=Fonts Directory (commonly `/usr/bin/fonts`),7
+mod_dir=Modules and misc Directory (commonly `/usr/bin/i386-pc`),7
+loc_dir=Language translations Directory (commonly `/usr/bin/local`),7
+thm_dir=Themes Directory (commonly `/usr/bin/themes`),7
+#4,2,3,5,6,7,8

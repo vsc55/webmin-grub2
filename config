@@ -1,0 +1,8 @@
+cfg_file=/boot/grub2/grub.cfg
+grub2_dir=/usr/bin
+cfgd_dir=/etc/grub.d
+dmap_file=device.map
+fonts_dir=fonts
+mod_dir=i386-pc
+loc_dir=local
+thm_dir=themes
