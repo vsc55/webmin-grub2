@@ -110,4 +110,93 @@ sub test_config
   return undef;
 }
 
+#
+# load_cfg_file (<optional filename>)
+#
+sub load_cfg_file
+{
+	my $file = @_[0];
+	my $file = "/boot/grub2/grub.cfg" if @_[0] eq "";
+	my $cfgfile = do {
+		local $/ = undef;
+		open my $fh, "<", $file
+			or die "could not open $file: $!";
+		<$fh>;
+	};
+	#close $fh;
+	return $cfgfile;
+}
+
+#
+# remove_all_comments_from_cfg_file (<optional file contents>)
+#
+sub remove_all_comments_from_cfg_file
+{
+	my $cfgfile = @_[0];
+	my $cfgfile = load_cfg_file() if @_[0] eq "";
+	$cfgfile =~ s/#[^\n]*\n//g;
+	return $cfgfile;
+}
+
+#
+# divide_cfg_into_parsed_files (<optional file contents>)
+#
+sub divide_cfg_into_parsed_files
+{
+	my $cfgfile = @_[0];
+	my $cfgfile = load_cfg_file() if @_[0] eq "";
+	@processed = split /### (BEGIN [^#]+) ###\n/, $cfgfile;	# divide into files parsed
+	my %prohash;
+	for (my $index = 0; $index < $#processed; $index++) {
+		if ($processed[$index] =~ m/^BEGIN/) {
+			$processed[$index] =~ s/^BEGIN\s+//;	# remove beginning
+			my $temp = $processed[$index];
+			$processed[$index+1] =~ s/\n*###\s+END\s+$temp\s+###\n*$//;
+			$prohash{$processed[$index]} = $processed[$index+1];	# insert hash row
+		}
+	}
+	return %prohash;
+}
+
+############################### cutoff ###############################
+# USAGE:                                                             #
+# $cutoff = cutoff($string, $length, $end);                          #
+# ($cutoff, $restofstring) = cutoff($string, $length, $end);         #
+# $string is the string you want to be cut off at a given length     #
+# $length is the position you want to start at                       #
+# $end is what to put at the end, like a ...                         #
+# By using rindex, it will start at that spot, if it is in the       #
+# middle of a word, it will move back till it finds a space and cuts #
+# it off at that point.                                              #
+# Since it uses wantarray, if you want an array back, it will return #
+# the portion you want, and the rest of the string. Otherwise, it    #
+# will return just the cutoff portion.                               #
+######################################################################
+sub cutoff {
+    my $string = shift;            # get the string to examine
+    my $size   = shift;            # get the size to "cut off" at
+    my $end    = shift;            # characters to pad the end (...)
+    my $length = length($string);  # get the length
+    if ($length <= $size) {        # If the length is less than or 
+        return($string);           # equal to the size we want to cut 
+                                   # off at, don't cut off
+    } # end if
+    else {
+        # This takes the string, and uses rindex (same as index, but
+        # reverse). It starts at $size, and goes back till it finds a
+        # space and returns that position
+        my $pos = rindex($string, " ", $size);
+        # With the position to turnicate from, this uses substr to
+        # acomplish this.
+        my $cutstring    = substr($string, 0, $pos);
+    my $restofstring = substr($string, $pos, length($string));
+    $restofstring =~ s/^\s//; # Remove just the first space
+    $cutstring .= $end if ($end);
+    # If we want an array, return $cutstring, and $restofstring
+    # otherwise return just $cutstring
+        return wantarray ? ($cutstring, $restofstring) : $cutstring;
+    } # end else
+} # end cutoff
+######################################################################
+
 ;1

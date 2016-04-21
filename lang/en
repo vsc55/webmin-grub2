@@ -10,56 +10,27 @@ index_noentrys=No entries yet!
 index_short=GRUB2
 
 tab_files=Files Information
-tab_existing=Entries
+tab_entry=Menu Entries
 tab_environ=Environment
 tab_other=other
 
-env_sel=Select
-env_var=Variable
-env_value=Value
-env_delete=Delete
 env_edit=Edit Environment
 env_was=Original value $1
-	
+
+entry_name=Name
+entry_sub_name=in Submenu
+entry_classes=Classes
+entry_mods=Modules
+entry_opt_var=Variables in Options
+entry_protected=Unrestricted
+entry_sets=Sets
+entry_opt_if=Conditions in Options
+
+var=Variable
+val=Value
+delete=Delete
+select=Select
 noversion=n/a
 add=Add new
 del=Delete this:
 edit=Edit
-
-
-
-index_defserv=Default Host
-
-index_delete=Select
-index_enabled=Active (click to toggle)?
-index_name=Server Name
-index_addr=Address
-index_port=Port
-index_root=Document Root
-index_url=URL
-index_view=View
-
-disa=Active : (click to Disable <i class="fa fa-unlink"></i>)
-enab=(click to Enable <i class="fa fa-link"></i>)
-
-gl_edit=Edit nginx.conf
-gl_proxy=Edit proxy.conf
-gl_details=View nginx details
-
-manual_title=Edit Config File
-manual_header=Use the text box below to manually edit the nginx config file for $1.
-
-nginx_apply=Apply Changes
-nginx_stop=Stop nginx
-nginx_start=Start nginx
-
-#stop_nginx=nginx stopped manually
-stop_epid=Failed to open PID file
-stop_esig=Failed to send SIGTERM to process $1
-
-#start_nginx=nginx started manually
-start_err=Failed to start nginx
-
-test_err=Couldn't test nginx configuration
-
-sep_by=, separated by
