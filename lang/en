@@ -12,11 +12,12 @@ index_short=GRUB2
 tab_files=Files Information
 tab_entry=Menu Entries
 tab_environ=Environment
-tab_other=other
+tab_other=Display settings
 
 env_edit=Edit Environment
 env_was=Original value $1
 
+entry_id=ID
 entry_name=Name
 entry_sub_name=in Submenu
 entry_classes=Classes
@@ -25,6 +26,8 @@ entry_opt_var=Variables in Options
 entry_protected=Unrestricted
 entry_sets=Sets
 entry_opt_if=Conditions in Options
+
+item_show=Heading Name
 
 var=Variable
 val=Value

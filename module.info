@@ -6,5 +6,5 @@ desc=GRUB2 Boot Management
 longdesc=GRUB2 Boot Management
 category=hardware
 os_support=*-linux solaris freebsd
-version=0.01a
+version=0.01b
 

@@ -169,13 +169,40 @@ print ui_tabs_start_tab('mode', 'entry');
 		for my $entry (@entrys) {
 			my $valid = 0;
 			if ($entry =~ m/^[\"']([^\"']+)[\"']\s*([^\{]*)\s*\{\s*([^\}]+)\}\s*/) {	$valid = 1;	}
-			my $ename = $1;
-			my $eopts = $2;
-			my @array = split /\s/, $2;
+			my ($ename,$eopts,$eins_whole) = ($1,$2,$3);	# grab menuentry name, prefic options, inners
+			#my $ename = $1;	# grab menuentry name
+			#my $eopts = $2;
+			my @array = split /\s/, $2;	# divide each prefix option (space)
+			#my $eins = $3;
+			
+			my $eins = $eins_whole;
+			#print "[eins is]:".Dumper($eins)."[||||]";#good
+			$loc_if_start = index ($eins, "if");
+			$eins_ifs_start = substr ($eins, $loc_if_start);
+			##print "[eins_ifs_start is]:".Dumper($eins_ifs_start)."[||||]";#good
+			@eins_ifs = split /(\bfi\b)/, $eins_ifs_start;
+			my @bettereiifs;
+			for (@eins_ifs) {
+				$_ =~ s/fi.*$/fi/i;
+				push (@bettereiifs, $_);
+			}
+			@bettereiifs = grep {	/^if/ 	} @bettereiifs;
+			#my @bettereiifs = &mk_array_without ($eins, "if", "fi");
+			#print "[bettereiifs is:]".Dumper(@bettereiifs)."[||||]";#good
+			#my @eiarray = split /\n/, $3;	# divide each inner part (newline)
+			#my @eiarray = split /\n/, join ("\n", @bettereiifs);	# divide each inner part (newline)
+			my @eiarray = @bettereiifs;
+			#my @eins_lines = grep {	!/$eins/	} @bettereiifs;
+			for (@bettereiifs) {
+				$eins =~ s/$_//;	# remove all bettereiifs lines from $eins
+				push(@eins_lines, $eins) if $_ =~ /$eins/;
+			}
+			my @eins_lines = split /\n/, $eins;
+			
 			my $cntr = 0;
 			my $key;
 			my %eoptsarray;# = [ var => "",	class => "",	unrestricted => ""	];
-			for my $e (@array) {
+			for	my $e (@array) {	# each prefix option
 				#print "(".($cntr+1).")$e";
 				#print "[".$array[$cntr]."]";
 				if ($e =~ /^[^a-zA-z\"']/) {	# first letter is not alpha or quote
@@ -198,17 +225,30 @@ print ui_tabs_start_tab('mode', 'entry');
 			}
 			my $cls = $eoptsarray{'class'};
 			my $unr = ($eoptsarray{'unrestricted'}) ? true : false;
-			my $vars = $eoptsarray{'var'};
+			my $optv = $eoptsarray{'var'};
 			#print "eoptsarray is ".Dumper(\%eoptsarray);
 			#print ":options:".Dumper(\@array);
 			#my %eopts = split /( |;;)/, join ";;", @array;
 			#my @eopts = split /( |;;)/, join ";;", @array;
-			my @array = split /\n/, $3;
-			my $eins = join ";;", @array;
-			$eins =~ s/if.*fi//g;
-			$eins =~ s/\t//g;
-			$eins =~ s/;;;;/;;/g;
-			$eins =~ s/;;$//g;
+			#my @array = split /\n/, $3;
+			#my $eins = join ";;", @array;
+			#$eins =~ s/if.*fi//g;
+			#$eins =~ s/\t//g;
+			#$eins =~ s/;;;;/;;/g;
+			#$eins =~ s/;;$//g;
+			my %eoptions;
+			#for (@eiarray) {	# each inner line
+			for (@eins_lines) {	# each inner line
+				#print "[line of ei]:$_";#good
+				$_ =~ s/\t\s*//;	# remove tab characters with optional spaces
+				#print "[line of ei(no tabs)]:$_";#good
+				@eiarray2 = split /\s/, $_;	# make an array each of parameter(s)
+				#$grub2cfg{$count}{$ecnt}{'inners'}{shift @eiarray2} = @eiarray2;
+				my $key = shift @eiarray2;
+				#my $val = @eiarray2;
+				$eoptions{$key} = @eiarray2;# if $key != "";#$val;
+			}
+			#print "[eoptions is]:".Dumper (\%eoptions)."[||||]";
 =skip
 			$s = 0;
 			for (@array) {
@@ -309,10 +349,10 @@ print ui_tabs_start_tab('mode', 'entry');
 				#						options =>		$eopts,#join " ", $eopts,#join " ", %pre,
 										classes =>		$cls,
 										protected =>	$unr,
-										vars_in_opts =>	$vars,
+										opts_vars =>	$optv,
 										opts_if =>		$pre_if,
-										inner =>		$eins,#join ", ", @eins,#join " ", %ins,#$inner,
-										insmod =>		$mods,
+										#inners =>		%eoptions,#@eiarray,#$eins,#join ", ", @eins,#join " ", %ins,#$inner,
+				#						insmod =>		$mods,
 										set =>			$sets,
 #										all =>			($name eq $ename) ? '' : $entry
 										all =>			$entry
@@ -330,19 +370,19 @@ print ui_tabs_start_tab('mode', 'entry');
 			print $text{'index_noentrys'};
 			exit();
 		}
-		if (!$count) {
-			if ($nentrys != 1) {
-				print "mainmenu has $nentrys entries.<br />";
-			} else {
-				print "mainmenu has $nentrys entry.<br />";
-			}
-		} else {
-			if ($nentrys != 1) {
-				print "submenu $count has $nentrys entries.<br />";
-			} else {
-				print "submenu $count has $nentrys entry.<br />";
-			}
-		}
+		#if (!$count) {
+		#	if ($nentrys != 1) {
+		#		print "mainmenu has $nentrys entries.<br />";
+		#	} else {
+		#		print "mainmenu has $nentrys entry.<br />";
+		#	}
+		#} else {
+		#	if ($nentrys != 1) {
+		#		print "submenu $count has $nentrys entries.<br />";
+		#	} else {
+		#		print "submenu $count has $nentrys entry.<br />";
+		#	}
+		#}
 		$count++;
 		#foreach $entry (@entrys) {
 		#	print "$entry<br /><br />";
@@ -401,12 +441,18 @@ print ui_tabs_start_tab('mode', 'entry');
 	#	print "$key = $value\n";
 	#}
 #=tryform
+	#while (my ($key,$value) = each %{$grub2cfg{$sb}{$i}{'opts_vars'}}) {
+	#	$array[$key] = $value;
+	#}
+	#print "grub2cfg_sb_i_'opts_vars' is:".Dumper($grub2cfg{$sb}{$i}{'opts_vars'});
+
 	@links = ( );
 	push(@links, &select_all_link("d"), &select_invert_link("d"));
 	print &ui_form_start("delete_entry.cgi", "get");
 	print &ui_links_row(\@links);
 	print &ui_columns_start([
 		$text{'select'},
+		$text{'entry_id'},
 		$text{'entry_name'},
 		$text{'entry_sub_name'},
 		$text{'entry_classes'},
@@ -414,19 +460,61 @@ print ui_tabs_start_tab('mode', 'entry');
 		$text{'entry_opt_var'},
 		$text{'entry_protected'},
 		$text{'entry_sets'},
+		$text{'entry_inners'},
 		$text{'entry_opt_if'} ], 100);
 	foreach $sb (keys %grub2cfg) {	# each submenu
 		foreach $i (keys $grub2cfg{$sb}) {	# each menu entry
 			if ($grub2cfg{$sb}{$i}{'valid'}) {	# only show valid entries
 				my @cols;
-				push (@cols, "<a href=\"edit.cgi?".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\">".&html_escape (cutoff ($grub2cfg{$sb}{$i}{'name'}, 40, "..."))."</a>");
-				push (@cols, &html_escape (cutoff ($grub2cfg{$sb}{'name'}, 20, "...")));
-				push (@cols, &html_escape (cutoff (join (",", $grub2cfg{$sb}{$i}{'classes'}), 10, "...")));
-				push (@cols, &html_escape (cutoff ($grub2cfg{$sb}{$i}{'insmod'}, 5, "...")));
-				push (@cols, &html_escape (cutoff ($grub2cfg{$sb}{$i}{'vars_in_opts'}, 5, "...")));
-				push (@cols, &html_escape (cutoff ($grub2cfg{$sb}{$i}{'protected'}, 5, "...")));
-				push (@cols, &html_escape (cutoff ($grub2cfg{$sb}{$i}{'set'}, 5, "...")));
-				push (@cols, &html_escape (cutoff ($grub2cfg{$sb}{$i}{'opts_if'}, 5, "...")));
+				push (@cols, $grub2cfg{$sb}{$i}{'id'});
+				if (length ($grub2cfg{$sb}{$i}{'name'}) > 40) {	# menuentry name
+					push (@cols, "<a title=\"".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\" href=\"edit.cgi?".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\">".&html_escape (cutoff ($grub2cfg{$sb}{$i}{'name'}, 40, "..."))."</a>");
+				} else {
+					push (@cols, "<a href=\"edit.cgi?".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\">".&html_escape ($grub2cfg{$sb}{$i}{'name'})."</a>");
+				}
+				if (length ($grub2cfg{$sb}{'name'}) > 17) {	# submenu name
+					push (@cols, "<span title=\"".&html_escape ($grub2cfg{$sb}{'name'})."\">".&html_escape (substr ($grub2cfg{$sb}{'name'}, 0, 17)."...")."</span>");
+				} else {
+					push (@cols, &html_escape ($grub2cfg{$sb}{'name'}));
+				}
+				if (length ($grub2cfg{$sb}{$i}{'classes'}) > 7) {	# options-classes
+					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'classes'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'classes'}}), 0, 7)."...")."</span>");
+				} else {
+					push (@cols, &html_escape (join (",", @{$grub2cfg{$sb}{$i}{'classes'}})));
+				}
+				my @array = ();
+				while (my ($key,$val) = each $grub2cfg{$sb}{$i}{'opts_vars'}) {
+					push @array, $key. ' => '. $grub2cfg{$sb}{$i}{'opts_vars'}{$val};
+				}
+				#@array = join(', ', @array);
+				#print join(', ', @array);
+				if (length ($grub2cfg{$sb}{$i}{'insmod'}) > 5) {	# inner-mods
+					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'insmod'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'insmod'}}), 0, 5)."...")."</span>");
+				} else {
+					push (@cols, &html_escape (cutoff (join (",", @{$grub2cfg{$sb}{$i}{'insmod'}}), 5, "...")));
+				}
+				push (@cols, &html_escape (cutoff (join (",", @array), 5, "...")));
+				#push (@cols, join (",", @{$grub2cfg{$sb}{$i}{'opts_vars'}}));
+				if (length ($grub2cfg{$sb}{$i}{'protected'}) > 5) {	# options-unrestricted
+					push (@cols, "<span title=\"".&html_escape ($grub2cfg{$sb}{$i}{'protected'})."\">".&html_escape (substr ($grub2cfg{$sb}{$i}{'protected'}, 0, 5)."...")."</span>");
+				} else {
+					push (@cols, &html_escape ($grub2cfg{$sb}{$i}{'protected'}));
+				}
+				if (length ($grub2cfg{$sb}{$i}{'set'}) > 5) {
+					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'set'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'set'}}), 0, 5)."...")."</span>");
+				} else {
+					push (@cols, &html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'set'}}), 0, 5)."..."));
+				}
+				if (length ($grub2cfg{$sb}{$i}{'inners'}) > 5) {
+					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'inners'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'inners'}}), 0, 5)."...")."</span>");
+				} else {
+					push (@cols, &html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'inners'}}), 0, 5)."..."));
+				}
+				if (length ($grub2cfg{$sb}{$i}{'opts_if'}) > 5) {
+					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'opts_if'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'opts_if'}}), 0, 5)."...")."</span>");
+				} else {
+					push (@cols, &html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'opts_if'}}), 0, 5)."..."));
+				}
 				print &ui_checked_columns_row(\@cols, undef, "d", "$sb-$i");
 			}
 		}
@@ -483,6 +571,33 @@ print ui_tabs_start_tab('mode', 'environ');
 print ui_tabs_end_tab('mode', 'environ');
 
 print ui_tabs_start_tab('mode', 'other');
+	@array = (
+			  0 => 	[	'name' => 	$text{'entry_id'},			'pos' => 0, 'on' => true	],
+			  1 => 	[	'name' => 	$text{'entry_name'},		'pos' => 1, 'on' => true	],
+			  2 => 	[	'name' => 	$text{'entry_sub_name'},	'pos' => 2, 'on' => true	],
+			  3 => 	[	'name' => 	$text{'entry_classes'},		'pos' => 3, 'on' => true	],
+			  4 => 	[	'name' => 	$text{'entry_mods'},		'pos' => 4, 'on' => true	],
+			  5 => 	[	'name' => 	$text{'entry_opt_var'},		'pos' => 5, 'on' => false	],
+			  6 => 	[	'name' => 	$text{'entry_protected'},	'pos' => 6, 'on' => true	],
+			  7 => 	[	'name' => 	$text{'entry_sets'},		'pos' => 7, 'on' => true	],
+			  8 => 	[	'name' => 	$text{'entry_inners'},		'pos' => 8, 'on' => false	],
+			  9 => 	[	'name' => 	$text{'entry_opt_if'},		'pos' => 9, 'on' => true	]
+			 );
+	@links = ( );
+	push(@links, &select_all_link("d"), &select_invert_link("d"));
+	print &ui_form_start("delete_entry.cgi", "get");
+	print &ui_links_row(\@links);
+	print &ui_columns_start([
+		$text{'select'},
+		$text{'item_show'} ], 100);
+	for $a (@array) {
+		my @cols;
+		push (@cols, $a->('name'));
+		print &ui_checked_columns_row (\@cols, undef, "d", $a, $a->('on'));
+	}
+	print &ui_columns_end();
+	print &ui_links_row(\@links);
+	print &ui_form_end([ [ "delete", $text{'delete'} ] ]);
 print ui_tabs_end_tab('mode', 'other');
 	
 print ui_tabs_start_tab('mode', 'files');

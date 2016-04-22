@@ -189,14 +189,31 @@ sub cutoff {
         # With the position to turnicate from, this uses substr to
         # acomplish this.
         my $cutstring    = substr($string, 0, $pos);
-    my $restofstring = substr($string, $pos, length($string));
-    $restofstring =~ s/^\s//; # Remove just the first space
+    #my $restofstring = substr($string, $pos, length($string));
+    #$restofstring =~ s/^\s//; # Remove just the first space
     $cutstring .= $end if ($end);
     # If we want an array, return $cutstring, and $restofstring
     # otherwise return just $cutstring
-        return wantarray ? ($cutstring, $restofstring) : $cutstring;
+#        return wantarray ? ($cutstring, $restofstring) : $cutstring;
+        return $cutstring;
     } # end else
 } # end cutoff
 ######################################################################
 
+#
+# mk_array_without ($string, $start, $end)
+#
+sub mk_array_without
+{
+	my $loc_start = index ($string, $start);
+	my $string_start = substr ($string, $loc_start);
+	@array = split /(\b$end\b)/, $string_start;
+	my @better;
+	for (@array) {
+		$_ =~ s/($end).*$/$1/i;
+		push (@better, $_);
+	}
+	@better = grep {	/^$end/ 	} @better;
+	return @better;
+}
 ;1
