@@ -1,6 +1,6 @@
-cfg_file=/boot/grub2/grub.cfg
+unsure*cfg_file=/boot/grub2.cfg
 def_file=/etc/default/grub
-sys_file=/etc/sysconfig/grub
+unsure*sys_file=/etc/sysconfig/bootloader
 grub2_dir=/usr/bin
 cfgd_dir=/etc/grub.d
 dmap_file=device.map
@@ -9,3 +9,4 @@ mod_dir=i386-pc
 loc_dir=local
 thm_dir=themes
 highlight=lightgreen
+

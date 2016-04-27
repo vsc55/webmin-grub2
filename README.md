@@ -1,5 +1,11 @@
 # webmin-grub2
 
+*0.01c
+
+.Better Environment
+
+.Commands for Debian-style + Redhat-style
+
 *0.01b
 
 .Better display table (with ... and title)

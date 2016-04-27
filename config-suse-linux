@@ -1,4 +1,5 @@
-cfg_file=/boot/grub2/grub.cfg
+cfg_file=/boot/grub2/grub2.cfg
+sys_file=/etc/sysconfig/bootloader
 def_file=/etc/default/grub
 sys_file=/etc/sysconfig/grub
 grub2_dir=/usr/bin

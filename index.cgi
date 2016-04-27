@@ -5,7 +5,7 @@
 require './grub2-lib.pl';
 &ReadParse();
 
-use limit;
+use limit;	# limit virtual memory allocation
 
 #my %rv;
 
@@ -28,11 +28,11 @@ use limit;
 
 # Page header
 &ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1, undef,
+#				 $gconfig{'os_type'}. "<br />".
 #	&update_button()."<br>".
 	&help_search_link("grub2", "man", "doc", "google"), undef, undef,
 	&text('index_version', $version));
 #&ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1);
-
 ## Check if grub2 is installed
 #if (!-x $config{'grub2_dir'}) {
 #	print &text('index_notfound', $config{'grub2_dir'}),
@@ -61,386 +61,23 @@ use limit;
 #}
 
 # Start main display
-@tabs = (['entry', $text{'tab_entry'}], ['environ', $text{'tab_environ'}], ['other', $text{'tab_other'}], ['files', $text{'tab_files'}]);
+@tabs = (
+		 ['entry', 		$text{'tab_entry'}],
+		 ['environ', 	$text{'tab_environ'}],
+		 ['other', 		$text{'tab_other'}],
+		 ['files', 		$text{'tab_files'}],
+		 ['summary', 	$text{'tab_sum'}]
+		);
 
-print ui_tabs_start(\@tabs, 'mode', 'entry');
+my %parsed = &divide_cfg_into_parsed_files();
+#print "parsed is ".Dumper (\%parsed)."||||";
+
+#print "parsed cfg is ".Dumper (\%grub2cfg)."||||";
+
+print ui_tabs_start(\@tabs, 'mode', 'summary');
 
 print ui_tabs_start_tab('mode', 'entry');
-#structure:
-#submenu
-#-menuentry
-#--name
-#--ins
-#--set
-#--class
-#--other
-	my $cfgfile = &load_cfg_file();
-	
-	my %parsed = &divide_cfg_into_parsed_files();
-	#print "parsed is ".Dumper (\%parsed)."||||";
-	
-	#print "$cfgfile<br />";
-	#if ($cfgfile !~ "/menuentry/") {
-	if (&indexof ($cfgfile, "menuentry")!=-1) {
-	#if (!length $cfgfile) {
-		print $text{'index_noentrys'};
-		exit();
-	}
-#my $nsubs = 0;
-#while (index($cfgfile, "submenu", 0)!=-1) {
-#while ($cfgfile !~ "/submenu/") {
-#	$nsubs++;
-#}
-	my @subs = split /submenu\s+/, $cfgfile;	# separate each submenu
-	#my %subs = split /submenu\s/, $cfgfile;	# separate each submenu
-	#print join "-----", @subs;
-	#print "-;-;-;-;-;-;";
-	#print Dumper(\%subs);
-#=was
-	my %grub2cfg;
-#my $nentrys = 0;
-##while (index($cfgfile, "menuentry", 0)!=-1) {
-#while ($cfgfile !~ "/menuentry/") {
-#	$nentrys++;
-#}
-	#while ($index <= $#subs) {
-	#	my $value = $subs[$index];
-	#	print "testing $value\n";
-	#	if ($value =~ m/^(submenu\s+)/) {
-	#		print "removed value $value\n";
-	#		splice @subs, $index, 1;
-	#	} else {
-	#		$value =~ s/^submenu\s+//;
-	#		$index++;
-	#	}
-	#}
-	#my @array = qw( alpha beta gamma delta );
-	for (my $index = $#subs; $index >= 0; --$index) {
-		#print "SUBMENU$index))$subs[$index]((";
-		#if ($subs[$index] !~ /^[\"']/) {
-		#	#print "removing $index.\n";
-		#	print "removing $subs[$index].\n";
-		#	splice @subs, $index, 1;	# remove certain elements
-		#} else {
-		#	$subs[$index] =~ s/^(submenu\s+)//;
-		#}
-	}
-	my $count = 0;
-	for my $a (@subs) {
-		my $index = 0;
-		#if ($a =~ m/^(submenu\s+)/) {
-		#	shift @subs;
-		#} else {
-		#	$a =~ s/^submenu\s+//;
-		#}
-		my $valid = 0;
-		if ($a =~ m/^[\"']([^\"']+)[\"']\s*(.[^\{]+)/) {	$valid = 1;	}
-		my $sname = ($valid == 1) ? $1 : "main";
-		my $tempopts = $2;
-		my $tempopts_noif;
-		if ($tempopts =~ m/(if.*fi)/) {
-			@temp = split /$1/, $tempopts;
-			for (@temp) {
-				$tempopts_noif .= $tempopts =~ s/$1//;
-			}
-		}
-		my $sopts = $tempopts =~ s/\s*$//;
-		#my %sopts = split / /, $2;
-		$grub2cfg{$count} = {
-			valid => 	$valid,
-			name => 	$sname,
-			options => 	(defined $tempopts_noif) ? $tempopts_noif : $sopts,#join "; ", %sopts,
-#			all => 		$a
-		};
-		if (substr($a, 0, 1) =~ /^['"]/) {
-			$a =~ /^([\"'])(?:\\\1|.)*?\1/;
-			#if (!$sname) {
-			#	$sname = "main";
-			#}
-			#print Dumper($2);
-			#$grubcfg{$sname} = [	"name" =	""	];
-		}
-		#print "SUBMENU:$a<br /><br />";
-		@entrys = split /menuentry\s/, $a;	# divide each submenu into menuentries
-		#my %entrys = split /menuentry\s/, $a;	# divide each submenu into menuentries
-		#print Dumper (\%entrys);
-#=was
-		my $ecnt = 0;
-		for my $entry (@entrys) {
-			my $valid = 0;
-			if ($entry =~ m/^[\"']([^\"']+)[\"']\s*([^\{]*)\s*\{\s*([^\}]+)\}\s*/) {	$valid = 1;	}
-			my ($ename,$eopts,$eins_whole) = ($1,$2,$3);	# grab menuentry name, prefic options, inners
-			#my $ename = $1;	# grab menuentry name
-			#my $eopts = $2;
-			my @array = split /\s/, $2;	# divide each prefix option (space)
-			#my $eins = $3;
-			
-			my $eins = $eins_whole;
-			#print "[eins is]:".Dumper($eins)."[||||]";#good
-			$loc_if_start = index ($eins, "if");
-			$eins_ifs_start = substr ($eins, $loc_if_start);
-			##print "[eins_ifs_start is]:".Dumper($eins_ifs_start)."[||||]";#good
-			@eins_ifs = split /(\bfi\b)/, $eins_ifs_start;
-			my @bettereiifs;
-			for (@eins_ifs) {
-				$_ =~ s/fi.*$/fi/i;
-				push (@bettereiifs, $_);
-			}
-			@bettereiifs = grep {	/^if/ 	} @bettereiifs;
-			#my @bettereiifs = &mk_array_without ($eins, "if", "fi");
-			#print "[bettereiifs is:]".Dumper(@bettereiifs)."[||||]";#good
-			#my @eiarray = split /\n/, $3;	# divide each inner part (newline)
-			#my @eiarray = split /\n/, join ("\n", @bettereiifs);	# divide each inner part (newline)
-			my @eiarray = @bettereiifs;
-			#my @eins_lines = grep {	!/$eins/	} @bettereiifs;
-			for (@bettereiifs) {
-				$eins =~ s/$_//;	# remove all bettereiifs lines from $eins
-				push(@eins_lines, $eins) if $_ =~ /$eins/;
-			}
-			my @eins_lines = split /\n/, $eins;
-			
-			my $cntr = 0;
-			my $key;
-			my %eoptsarray;# = [ var => "",	class => "",	unrestricted => ""	];
-			for	my $e (@array) {	# each prefix option
-				#print "(".($cntr+1).")$e";
-				#print "[".$array[$cntr]."]";
-				if ($e =~ /^[^a-zA-z\"']/) {	# first letter is not alpha or quote
-					$key = ($e =~ m/^\-\-(.*)$/) ? $1 : $e;
-					push(@{$eoptsarray{$key}}, true) if $array[($cntr+1)] =~ m/^[^a-zA-z\"']/;
-					#print "*key*";
-				} else {
-					if ($key) {
-						if ($key =~ m/^\$/) {
-							push(@{$eoptsarray{'var'}{$key}}, $e);
-						} else {
-							push(@{$eoptsarray{$key}}, $e);
-						}
-					} else {
-						$eoptsarray{$array[$cntr-1]} = true;
-					}
-					#print "*value*";
-				}
-				$cntr++;
-			}
-			my $cls = $eoptsarray{'class'};
-			my $unr = ($eoptsarray{'unrestricted'}) ? true : false;
-			my $optv = $eoptsarray{'var'};
-			#print "eoptsarray is ".Dumper(\%eoptsarray);
-			#print ":options:".Dumper(\@array);
-			#my %eopts = split /( |;;)/, join ";;", @array;
-			#my @eopts = split /( |;;)/, join ";;", @array;
-			#my @array = split /\n/, $3;
-			#my $eins = join ";;", @array;
-			#$eins =~ s/if.*fi//g;
-			#$eins =~ s/\t//g;
-			#$eins =~ s/;;;;/;;/g;
-			#$eins =~ s/;;$//g;
-			my %eoptions;
-			#for (@eiarray) {	# each inner line
-			for (@eins_lines) {	# each inner line
-				#print "[line of ei]:$_";#good
-				$_ =~ s/\t\s*//;	# remove tab characters with optional spaces
-				#print "[line of ei(no tabs)]:$_";#good
-				@eiarray2 = split /\s/, $_;	# make an array each of parameter(s)
-				#$grub2cfg{$count}{$ecnt}{'inners'}{shift @eiarray2} = @eiarray2;
-				my $key = shift @eiarray2;
-				#my $val = @eiarray2;
-				$eoptions{$key} = @eiarray2;# if $key != "";#$val;
-			}
-			#print "[eoptions is]:".Dumper (\%eoptions)."[||||]";
-=skip
-			$s = 0;
-			for (@array) {
-				splice @array, ++$s, 0, "\n";
-			}
-			#my @array2 = split /\n/, $eins;
-			
-			print "eins split is ".Dumper(\@array);
-			my $cntr = 0;
-			my $key;
-			my %einsarray;
-			for my $d (@array) {
-				$d =~ s/if.*fi//g;
-				$d =~ s/\t//g;
-				$d =~ s/;;;;/;;/g;
-				$d =~ s/;;$//g;
-				if ($d =~ /;;$/) {
-					$key = ($d =~ m/^\-\-(.*)$/) ? $1 : $d;
-					push(@{$einsarray{$key}}, true) if $array[($cntr+1)] =~ m/^[^a-zA-z\"']/;
-					#print "*key*";
-				} else {
-					if ($key) {
-						if ($key =~ m/^\$/) {
-							push(@{$einsarray{'var'}{$key}}, $d);
-						} else {
-							push(@{$einsarray{$key}}, $d);
-						}
-					} else {
-						$einsarray{$array[$cntr-1]} = true;
-					}
-					#print "*value*";
-				}
-				$cntr++;
-			}
-			my $mods = $einsarray{'insmod'};
-			my $linux = $einsarray{'linux'};
-			my $init = $einsarray{'initrd'};
-			my $sets = $einsarray{'set'};
-			#my $othi = $einsarray{'set'};
-			print "einsarray is ".Dumper (\%einsarray);
-=cut
-			#my %eins = split /\s,\n/, $3;
-#			chomp $eins;
-			#print "<b style=\"background-color:green\">".$entry[0].$entry[1].$entry[2]."</b>";
-			#$a =~ /^([\"'])(\\\1|.)*?\1/;
-			#my ($name) = $a =~ /^[\"']([^\"']+)[\"']/;
-			#$ename = "main" if !defined $ename;
-			#($ename) = $entry =~ /^[\"']([^\"']+)[\"']/;
-			my ($temppre) = $entry =~ /^[\"'][^\"']+[\"']\s([^\{]+)\s+/;
-			my @array = split / /, $temppre;
-			my %pre;
-			$pre{$_}++ for (@array);
-			my ($pre_if) = $pre =~ /(if\s[^(fi)]+fi)/;
-			$pre_if = "" if !defined;
-			my %real_pre = split / /, $entry;
-#			my %real_pre;
-#			my @mine;
-#			@my_pre = split / /, $pre;
-##my %final_hash_long;
-##foreach my $data_pair (@data_list) {
-##    my $key                = $data_pair->{key};
-##    my $value              = $data_pair->{value};
-##    $final_hash_long{$key} = $value;
-##}
-##
-#my %real_pre =
-#  map { $_->{key} => $_->{value} } @my_pre;
-#			my $n_pre = -1;
-#			for my $a (@my_pre) {
-#				print "$a->{'key'},$a->{'value'}\n";#print $a;
-#				$n_pre++;
-#				if (!$n_pre || $n_pre % 2) {	# if odd iteration
-#					my $key = $a;	# assign as key
-#				} else {
-#					my $val = $a;	# assign as val if even iteration
-#					if ($key ~~ @mine) {
-#						$real_pre{$key} .= ' '.$val;
-#					} else {
-#						$real_pre{$key} = $val;
-#					}
-#					push(@mine, $key);
-#				}
-#				print "$n_pre-$key=$val.";
-#			}
-			#($cls) = $entry =~ /--class\s(\w+)/;
-			#my ($cls) = $pre =~ /--class\s([^\s]+)/g;
-			#my ($inner) = $entry =~ /^[\"'][^\"']+[\"']\s*[^\{]+\{\s*([^\}]+)/;
-			my @array = split / /, $inner;
-			#my %ins = split / /, $inner;
-			#print Dumper (\%ins);
-			#$mods = join(" ", split /insmod\s/, $inner);
-			#$sets = join(" ", split /set\s/, $inner);
-			#$grub2cfg{$count}{'submenu'} = $a;
-			$grub2cfg{$count}{$ecnt} = {
-										id =>			$ecnt,
-										name =>			(defined $ename) ? $ename : "main",
-										valid =>		$valid,
-				#						options =>		$eopts,#join " ", $eopts,#join " ", %pre,
-										classes =>		$cls,
-										protected =>	$unr,
-										opts_vars =>	$optv,
-										opts_if =>		$pre_if,
-										#inners =>		%eoptions,#@eiarray,#$eins,#join ", ", @eins,#join " ", %ins,#$inner,
-				#						insmod =>		$mods,
-										set =>			$sets,
-#										all =>			($name eq $ename) ? '' : $entry
-										all =>			$entry
-										};
-		#if ($entry[0] ne "'" && $entry[0] ne '"') {	# skip first entry if doesn't start with quote
-		#	$pre = shift @entrys;
-		#}
-		#if ($entry =~ /\}\s*\}/) {	# ignore if doesn't end with }
-		#	pop @entrys;
-		#}
-			$ecnt++;
-		}
-		my $nentrys = scalar(@entrys);
-		if (!$nentrys && !$count) {	# no menuentry in mainmenu ????
-			print $text{'index_noentrys'};
-			exit();
-		}
-		#if (!$count) {
-		#	if ($nentrys != 1) {
-		#		print "mainmenu has $nentrys entries.<br />";
-		#	} else {
-		#		print "mainmenu has $nentrys entry.<br />";
-		#	}
-		#} else {
-		#	if ($nentrys != 1) {
-		#		print "submenu $count has $nentrys entries.<br />";
-		#	} else {
-		#		print "submenu $count has $nentrys entry.<br />";
-		#	}
-		#}
-		$count++;
-		#foreach $entry (@entrys) {
-		#	print "$entry<br /><br />";
-		#}
-#=cut
-	}
-#=was2
-	#print "submenus:scarlar(@subs).menuentrys:scalar(@entrys)<br />";
-	#($pre) = $cfgfile =~ /^([^(menuentry)]+)/m;
-	#my @bootcfg = extract_multiple(
-	#	$cfgfile,
-	#	[ sub{extract_bracketed($_[0], '{}')},],
-	#	undef,
-	#	1
-	#);
-	#print "<pre>";
-	#print $pre;
-	#print "$_<br \>" foreach @bootcfg;
-	#print "</pre>";
-	#my @subs = split /submenu\s/, $cfgfile;	# divide cfg into main, sub0, ...
-	#foreach (@subs) {	# add sections (as above) to whole array
-	#	push (@bootcfg, $_);
-	#}
-	#foreach $sub (@subs) {	# add each menuentry to its section of the whole array
-	#	foreach (split /menuentry\s/, $sub) {
-	#		push (@{$sub}, $_);
-	#	}
-	#}
-	#my @main_entrys = split /menuentry\s/, shift @subs;
-	#foreach (@subs) {
-	#	push (@subs, split /menuentry\s/);
-	#}
-	#print Dumper (@bootcfg);
-	#my @names = split /menuentry\s.([^'|"]+)./, $entry;
-	#my @names = split /menuentry\s.([^'|"]+)./, $cfgfile;#([^\{]+)\{([^\}])}
-	#my @names = $cfgfile =~ /menuentry\s.([^'|"]+).(\{(?:[^{}]*|(?0))*\})/xg;
-	#@entrys = extract_multiple($text,
-	#    [ \&extract_bracketed,
-	#		\&extract_quotelike,
-	#		\&some_other_extractor_sub,
-	#		qr/[xyz]*/,
-	#		'literal',
-	#	]);
-	#(@entrys) = extract_delimited $cfgfile, q{"'};
-	#@entrys = extract_codeblock ($cfgfile, '{}');
-	#shift @names;
-	#print scalar(@names);
-	#print "<pre>";
-	#foreach (@entrys) {
-	#	print "$_<br />";
-	#}
-	#print "</pre>";
-	#print "real_pre:".Dumper(\%real_pre);
-	#print "my_pre:".Dumper(\@my_pre);
-	#while (my ($key, $value) = each @my_pre) {
-	#	print "$key = $value\n";
-	#}
-#=tryform
+
 	#while (my ($key,$value) = each %{$grub2cfg{$sb}{$i}{'opts_vars'}}) {
 	#	$array[$key] = $value;
 	#}
@@ -448,7 +85,7 @@ print ui_tabs_start_tab('mode', 'entry');
 
 	@links = ( );
 	push(@links, &select_all_link("d"), &select_invert_link("d"));
-	print &ui_form_start("delete_entry.cgi", "get");
+	print &ui_form_start("do_entry.cgi", "get");
 	print &ui_links_row(\@links);
 	print &ui_columns_start([
 		$text{'select'},
@@ -468,9 +105,9 @@ print ui_tabs_start_tab('mode', 'entry');
 				my @cols;
 				push (@cols, $grub2cfg{$sb}{$i}{'id'});
 				if (length ($grub2cfg{$sb}{$i}{'name'}) > 40) {	# menuentry name
-					push (@cols, "<a title=\"".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\" href=\"edit.cgi?".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\">".&html_escape (cutoff ($grub2cfg{$sb}{$i}{'name'}, 40, "..."))."</a>");
+					push (@cols, "<a title=\"".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\" href=\"edit.cgi?".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\">".(($grub2cfg{$sb}{$i}{'is_saved'}) ? "<strong>" : "").&html_escape (cutoff ($grub2cfg{$sb}{$i}{'name'}, 40, "...")).(($grub2cfg{$sb}{$i}{'is_saved'}) ? "</strong>" : "")."</a>");
 				} else {
-					push (@cols, "<a href=\"edit.cgi?".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\">".&html_escape ($grub2cfg{$sb}{$i}{'name'})."</a>");
+					push (@cols, "<a href=\"edit.cgi?".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\">".(($grub2cfg{$sb}{$i}{'is_saved'}) ? "<strong>" : "").&html_escape ($grub2cfg{$sb}{$i}{'name'}).(($grub2cfg{$sb}{$i}{'is_saved'}) ? "</strong>" : "")."</a>");
 				}
 				if (length ($grub2cfg{$sb}{'name'}) > 17) {	# submenu name
 					push (@cols, "<span title=\"".&html_escape ($grub2cfg{$sb}{'name'})."\">".&html_escape (substr ($grub2cfg{$sb}{'name'}, 0, 17)."...")."</span>");
@@ -484,7 +121,8 @@ print ui_tabs_start_tab('mode', 'entry');
 				}
 				my @array = ();
 				while (my ($key,$val) = each $grub2cfg{$sb}{$i}{'opts_vars'}) {
-					push @array, $key. ' => '. $grub2cfg{$sb}{$i}{'opts_vars'}{$val};
+					push (@array, $key. ' => '. $val);#$grub2cfg{$sb}{$i}{'opts_vars'}{$val}{$val});#$key{$key});#$grub2cfg{$sb}{$i}{'opts_vars'}{$val};
+#####$val not correct#####					
 				}
 				#@array = join(', ', @array);
 				#print join(', ', @array);
@@ -515,19 +153,24 @@ print ui_tabs_start_tab('mode', 'entry');
 				} else {
 					push (@cols, &html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'opts_if'}}), 0, 5)."..."));
 				}
-				print &ui_checked_columns_row(\@cols, undef, "d", "$sb-$i");
+				push (@cols, $grub2cfg{$sb}{$i}{'is_saved'});
+				my @tdtags;	# highlight entire row of saved_entry if any:
+				if ($grub2cfg{$sb}{$i}{'is_saved'}) {	for (my $i=1; $i<scalar (@cols)+1; $i++) {	$tdtags[$i]='style="background-color: '.$config{"highlight"}.'"';	}	}
+				print &ui_checked_columns_row(\@cols, \@tdtags, "d", "sub=$sb&amp;item=$i,");
 			}
 		}
 	}
 	print &ui_columns_end();
 	print &ui_links_row(\@links);
-	print &ui_form_end([ [ "delete", $text{'delete'} ] ]);
-#=cut
+	print &ui_form_end([	["delete", $text{'delete'}], ["mksaved", $text{'entry_mksaved'}], ["edit", $text{'entry_edit'}]	]);
+
 	print "hash_grub2cfg:".Dumper(\%grub2cfg);
 	#print "array_grub2cfg:".Dumper(\@grub2cfg);
+
 print ui_tabs_end_tab('mode', 'entry');
 
 print ui_tabs_start_tab('mode', 'environ');
+
 #    #plain open document creation here
 #    print &ui_form_start("create_server.cgi", "form-data");
 #
@@ -543,8 +186,35 @@ print ui_tabs_start_tab('mode', 'environ');
 #
 #	    print &ui_table_end();
 #    print &ui_form_end();
+
+	#print Dumper(%env_setts);
+	
+	my %grub2def = &get_grub2_def();
     @links = ( );
+    push(@links, &select_all_link("sel"), &select_invert_link("sel"));
+    print &ui_form_start("do_env.cgi", "get");
+    print &ui_links_row(\@links);
+    print &ui_columns_start([
+		$text{'select'},
+		$text{'var'},
+		$text{'val'} ],	100);
+	for (keys %grub2def) {
+			my @cols;
+#	    push(@cols, "<a class=\"del\" href=\"delenv.cgi\">$text{'del'}</a>".
+#			push (@cols, "<a href=\"do_env.cgi?var=".&urlize($_)."&amp;was=".&urlize($grub2env{$_}."&edit=Edit")."\">$_</a>");
+			push (@cols, "<span title=\"".$env_setts{$_}."\">$_</span>");
+#			push (@cols, "<a href=\"do_env.cgi?var=".&urlize($_)."&amp;was=".&urlize($grub2env{$_}."&edit=Edit")."\">$grub2env{$_}</a>");
+			push (@cols, $grub2def{$_});
+			print &ui_checked_columns_row(\@cols, undef, "sel", "$_&amp;was=$grub2def{$_}");
+		#}
+    }
+    print &ui_columns_end();
+    print &ui_links_row(\@links);
+    print &ui_form_end([ ["edit", $text{'edit'}], ["delete", $text{'delete'}] ]);
+	print "<a class=\"right\" href=\"add_env.cgi\">$text{'add'}</a>";
+
 	my %grub2env = &get_grub2_env();
+    @links = ( );
     push(@links, &select_all_link("sel"), &select_invert_link("sel"));
     print &ui_form_start("do_env.cgi", "get");
     print &ui_links_row(\@links);
@@ -571,6 +241,7 @@ print ui_tabs_start_tab('mode', 'environ');
 print ui_tabs_end_tab('mode', 'environ');
 
 print ui_tabs_start_tab('mode', 'other');
+
 	@array = (
 			  0 => 	[	'name' => 	$text{'entry_id'},			'pos' => 0, 'on' => true	],
 			  1 => 	[	'name' => 	$text{'entry_name'},		'pos' => 1, 'on' => true	],
@@ -592,26 +263,116 @@ print ui_tabs_start_tab('mode', 'other');
 		$text{'item_show'} ], 100);
 	for $a (@array) {
 		my @cols;
-		push (@cols, $a->('name'));
-		print &ui_checked_columns_row (\@cols, undef, "d", $a, $a->('on'));
+		push (@cols, $a['name']);
+		print &ui_checked_columns_row (\@cols, undef, "d", $a, $a['on']);
 	}
 	print &ui_columns_end();
 	print &ui_links_row(\@links);
 	print &ui_form_end([ [ "delete", $text{'delete'} ] ]);
+
 print ui_tabs_end_tab('mode', 'other');
 	
 print ui_tabs_start_tab('mode', 'files');
+
 	print "<dl>";
 	my %cmds = get_cmds();
-	foreach my $a (keys \%cmds) {
-		print "<dt>$a</dt>\n";
+	for my $a (keys \%cmds) {
+		print "<dt>".$cmds{$a}{$os}."</dt>\n";
 		while (my ($k, $v) = each %{ $cmds{$a} } ) {
-			print "\t<dd>$k = $v</dd>\n";
+			print "\t<dd>$k = $v</dd>\n" if $k ne "red" && $k ne "deb";
 		}
 		print "<br />\n";
 	}
 	print "</dl>";
+
 print ui_tabs_end_tab('mode', 'files');
+
+print ui_tabs_start_tab('mode', 'summary');
+
+	#while (my ($key,$value) = each %{$grub2cfg{$sb}{$i}{'opts_vars'}}) {
+	#	$array[$key] = $value;
+	#}
+	#print "grub2cfg_sb_i_'opts_vars' is:".Dumper($grub2cfg{$sb}{$i}{'opts_vars'});
+
+	@links = ( );
+	push(@links, &select_all_link("d"), &select_invert_link("d"));
+	print &ui_form_start("do_entry.cgi", "get");
+	print &ui_links_row(\@links);
+	print &ui_columns_start([
+		$text{'select'},
+		$text{'summ_file'},
+		$text{'summ_which'},
+		$text{'summ_config'},
+		$text{'summ_correct'} ], 100);
+#	foreach $sb (keys %grub2cfg) {	# each submenu
+#		foreach $i (keys $grub2cfg{$sb}) {	# each menu entry
+#			if ($grub2cfg{$sb}{$i}{'valid'}) {	# only show valid entries
+#				my @cols;
+#				push (@cols, $grub2cfg{$sb}{$i}{'id'});
+#				if (length ($grub2cfg{$sb}{$i}{'name'}) > 40) {	# menuentry name
+#					push (@cols, "<a title=\"".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\" href=\"edit.cgi?".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\">".(($grub2cfg{$sb}{$i}{'is_saved'}) ? "<strong>" : "").&html_escape (cutoff ($grub2cfg{$sb}{$i}{'name'}, 40, "...")).(($grub2cfg{$sb}{$i}{'is_saved'}) ? "</strong>" : "")."</a>");
+#				} else {
+#					push (@cols, "<a href=\"edit.cgi?".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\">".(($grub2cfg{$sb}{$i}{'is_saved'}) ? "<strong>" : "").&html_escape ($grub2cfg{$sb}{$i}{'name'}).(($grub2cfg{$sb}{$i}{'is_saved'}) ? "</strong>" : "")."</a>");
+#				}
+#				if (length ($grub2cfg{$sb}{'name'}) > 17) {	# submenu name
+#					push (@cols, "<span title=\"".&html_escape ($grub2cfg{$sb}{'name'})."\">".&html_escape (substr ($grub2cfg{$sb}{'name'}, 0, 17)."...")."</span>");
+#				} else {
+#					push (@cols, &html_escape ($grub2cfg{$sb}{'name'}));
+#				}
+#				if (length ($grub2cfg{$sb}{$i}{'classes'}) > 7) {	# options-classes
+#					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'classes'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'classes'}}), 0, 7)."...")."</span>");
+#				} else {
+#					push (@cols, &html_escape (join (",", @{$grub2cfg{$sb}{$i}{'classes'}})));
+#				}
+#				my @array = ();
+#				while (my ($key,$val) = each $grub2cfg{$sb}{$i}{'opts_vars'}) {
+#					push (@array, $key. ' => '. $val);#$grub2cfg{$sb}{$i}{'opts_vars'}{$val}{$val});#$key{$key});#$grub2cfg{$sb}{$i}{'opts_vars'}{$val};
+######$val not correct#####					
+#				}
+#				#@array = join(', ', @array);
+#				#print join(', ', @array);
+#				if (length ($grub2cfg{$sb}{$i}{'insmod'}) > 5) {	# inner-mods
+#					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'insmod'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'insmod'}}), 0, 5)."...")."</span>");
+#				} else {
+#					push (@cols, &html_escape (cutoff (join (",", @{$grub2cfg{$sb}{$i}{'insmod'}}), 5, "...")));
+#				}
+#				push (@cols, &html_escape (cutoff (join (",", @array), 5, "...")));
+#				#push (@cols, join (",", @{$grub2cfg{$sb}{$i}{'opts_vars'}}));
+#				if (length ($grub2cfg{$sb}{$i}{'protected'}) > 5) {	# options-unrestricted
+#					push (@cols, "<span title=\"".&html_escape ($grub2cfg{$sb}{$i}{'protected'})."\">".&html_escape (substr ($grub2cfg{$sb}{$i}{'protected'}, 0, 5)."...")."</span>");
+#				} else {
+#					push (@cols, &html_escape ($grub2cfg{$sb}{$i}{'protected'}));
+#				}
+#				if (length ($grub2cfg{$sb}{$i}{'set'}) > 5) {
+#					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'set'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'set'}}), 0, 5)."...")."</span>");
+#				} else {
+#					push (@cols, &html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'set'}}), 0, 5)."..."));
+#				}
+#				if (length ($grub2cfg{$sb}{$i}{'inners'}) > 5) {
+#					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'inners'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'inners'}}), 0, 5)."...")."</span>");
+#				} else {
+#					push (@cols, &html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'inners'}}), 0, 5)."..."));
+#				}
+#				if (length ($grub2cfg{$sb}{$i}{'opts_if'}) > 5) {
+#					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'opts_if'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'opts_if'}}), 0, 5)."...")."</span>");
+#				} else {
+#					push (@cols, &html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'opts_if'}}), 0, 5)."..."));
+#				}
+#				push (@cols, $grub2cfg{$sb}{$i}{'is_saved'});
+#				my @tdtags;	# highlight entire row of saved_entry if any:
+#				if ($grub2cfg{$sb}{$i}{'is_saved'}) {	for (my $i=1; $i<scalar (@cols)+1; $i++) {	$tdtags[$i]='style="background-color: '.$config{"highlight"}.'"';	}	}
+#				print &ui_checked_columns_row(\@cols, \@tdtags, "d", "sub=$sb&amp;item=$i,");
+#			}
+#		}
+#	}
+	print &ui_columns_end();
+	print &ui_links_row(\@links);
+	print &ui_form_end([	["delete", $text{'delete'}], ["mksaved", $text{'entry_mksaved'}], ["edit", $text{'entry_edit'}]	]);
+
+	#print "hash_grub2cfg:".Dumper(\%grub2cfg);
+	#print "array_grub2cfg:".Dumper(\@grub2cfg);
+
+print ui_tabs_end_tab('mode', 'summary');
 
 print ui_tabs_end();
 #}
