@@ -1,10 +1,18 @@
 # webmin-grub2
 
+*0.01d
+
+.Better Summary page
+
+.Fixed configuration
+
+
 *0.01c
 
 .Better Environment
 
 .Commands for Debian-style + Redhat-style
+
 
 *0.01b
 
