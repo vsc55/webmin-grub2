@@ -13,6 +13,7 @@ tab_files=Files Information
 tab_entry=Menu Entries
 tab_environ=Environment
 tab_other=Display settings
+tab_sum=Summary
 
 env_edit=Edit Environment
 env_was=Original value $1
@@ -26,6 +27,8 @@ entry_opt_var=Variables in Options
 entry_protected=Unrestricted
 entry_sets=Sets
 entry_opt_if=Conditions in Options
+entry_mksaved=Make default
+entry_edit=click Name to Edit
 
 item_show=Heading Name
 
@@ -37,3 +40,14 @@ noversion=n/a
 add=Add new
 del=Delete this:
 edit=Edit
+cdelete=Confirm Delete
+no_selected=No rows selected
+deleting=Deleting $1 
+editing=Editing $1
+entry=Entry
+entries=Entries
+
+summ_file=File or Directory
+summ_which=Found at
+summ_config=Configuration says
+summ_correct=Correct
