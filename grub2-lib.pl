@@ -6,25 +6,31 @@ BEGIN { push(@INC, ".."); };
 use WebminCore;
 use File::Basename;
 use Data::Dumper;#**use Data::Printer;
-use Text::Balanced qw (
-	extract_delimited
-	extract_bracketed
-	extract_quotelike
-	extract_codeblock
-	extract_variable
-	extract_tagged
-	extract_multiple
-	gen_delimited_pat
-	gen_extract_tagged
-);
+#use Text::Balanced qw (
+#	extract_delimited
+#	extract_bracketed
+#	extract_quotelike
+#	extract_codeblock
+#	extract_variable
+#	extract_tagged
+#	extract_multiple
+#	gen_delimited_pat
+#	gen_extract_tagged
+#);
 init_config();
+#=skip
+#if ($gconfig{'os_type'}=~/(gentoo-linux|redhat-linux|suse-linux)/) {
+#	our $os = "red";
+#} elsif ($gconfig{'os_type'}=~/(debian|ubuntu)/) {
+#	our $os = "deb";
+#}
 our $os = ($gconfig{'os_type'}=~/(gentoo-linux|redhat-linux|suse-linux)/) 	? 	"red" 	: 	($gconfig{'os_type'}=~/(debian|ubuntu)/) 	? 	"deb" 	: 	();
+our %cmds = &get_cmds();
+my $output = &backquote_command ($cmds{'install'}{$os}." -V 2>&1");
+our $version = (split ' ', $output)[2];	# get common version
 
-my $output = &backquote_command("(".$cmds{'install'}{$os}." -V) 2>&1");
-our $version = (split ' ', $output)[2];
-
-my %grub2env = &get_grub2_env();
-my $cfgfile = &load_cfg_file();
+my %grub2env = &get_grub2_env();	# read environment
+my $cfgfile = &load_cfg_file();	# build config array/hash
 #structure:
 #submenu
 #-menuentry
@@ -41,6 +47,9 @@ if (&indexof ($cfgfile, "menuentry")!=-1) {
 	exit();
 }
 
+#
+#
+#
 sub number_subs
 {
 	my $nsubs = 0;
@@ -50,6 +59,7 @@ sub number_subs
 	}
 	return $nsubs;
 }
+#=skip
 
 my @subs = split /submenu\s+/, $cfgfile;	# separate each submenu
 #my %subs = split /submenu\s/, $cfgfile;	# separate each submenu
@@ -207,47 +217,47 @@ for my $a (@subs) {
 			$eoptions{$key} = @eiarray2;# if $key != "";#$val;
 		}
 		#print "[eoptions is]:".Dumper (\%eoptions)."[||||]";
-=skip
-		$s = 0;
-		for (@array) {
-			splice @array, ++$s, 0, "\n";
-		}
-		#my @array2 = split /\n/, $eins;
-		
-		print "eins split is ".Dumper(\@array);
-		my $cntr = 0;
-		my $key;
-		my %einsarray;
-		for my $d (@array) {
-			$d =~ s/if.*fi//g;
-			$d =~ s/\t//g;
-			$d =~ s/;;;;/;;/g;
-			$d =~ s/;;$//g;
-			if ($d =~ /;;$/) {
-				$key = ($d =~ m/^\-\-(.*)$/) ? $1 : $d;
-				push(@{$einsarray{$key}}, true) if $array[($cntr+1)] =~ m/^[^a-zA-z\"']/;
-				#print "*key*";
-			} else {
-				if ($key) {
-					if ($key =~ m/^\$/) {
-						push(@{$einsarray{'var'}{$key}}, $d);
-					} else {
-						push(@{$einsarray{$key}}, $d);
-					}
-				} else {
-					$einsarray{$array[$cntr-1]} = true;
-				}
-				#print "*value*";
-			}
-			$cntr++;
-		}
-		my $mods = $einsarray{'insmod'};
-		my $linux = $einsarray{'linux'};
-		my $init = $einsarray{'initrd'};
-		my $sets = $einsarray{'set'};
-		#my $othi = $einsarray{'set'};
-		print "einsarray is ".Dumper (\%einsarray);
-=cut
+#=skip
+#		$s = 0;
+#		for (@array) {
+#			splice @array, ++$s, 0, "\n";
+#		}
+#		#my @array2 = split /\n/, $eins;
+#		
+#		print "eins split is ".Dumper(\@array);
+#		my $cntr = 0;
+#		my $key;
+#		my %einsarray;
+#		for my $d (@array) {
+#			$d =~ s/if.*fi//g;
+#			$d =~ s/\t//g;
+#			$d =~ s/;;;;/;;/g;
+#			$d =~ s/;;$//g;
+#			if ($d =~ /;;$/) {
+#				$key = ($d =~ m/^\-\-(.*)$/) ? $1 : $d;
+#				push(@{$einsarray{$key}}, true) if $array[($cntr+1)] =~ m/^[^a-zA-z\"']/;
+#				#print "*key*";
+#			} else {
+#				if ($key) {
+#					if ($key =~ m/^\$/) {
+#						push(@{$einsarray{'var'}{$key}}, $d);
+#					} else {
+#						push(@{$einsarray{$key}}, $d);
+#					}
+#				} else {
+#					$einsarray{$array[$cntr-1]} = true;
+#				}
+#				#print "*value*";
+#			}
+#			$cntr++;
+#		}
+#		my $mods = $einsarray{'insmod'};
+#		my $linux = $einsarray{'linux'};
+#		my $init = $einsarray{'initrd'};
+#		my $sets = $einsarray{'set'};
+#		#my $othi = $einsarray{'set'};
+#		print "einsarray is ".Dumper (\%einsarray);
+#=cut
 		#my %eins = split /\s,\n/, $3;
 #			chomp $eins;
 		#print "<b style=\"background-color:green\">".$entry[0].$entry[1].$entry[2]."</b>";
@@ -346,9 +356,9 @@ for my $a (@subs) {
 	#foreach $entry (@entrys) {
 	#	print "$entry<br /><br />";
 	#}
-#=cut
+#= cut
 }
-#=was2
+#= was2
 #print "submenus:scarlar(@subs).menuentrys:scalar(@entrys)<br />";
 #($pre) = $cfgfile =~ /^([^(menuentry)]+)/m;
 #my @bootcfg = extract_multiple(
@@ -399,18 +409,25 @@ for my $a (@subs) {
 #while (my ($key, $value) = each @my_pre) {
 #	print "$key = $value\n";
 #}
+#=skip
+#=cut
 
+#
 # gets environment
+#
 sub get_grub2_env
 {
-	print Dumper(%cmds);
+	#print Dumper(%cmds);
 	my $output = &backquote_command("(".$cmds{'editenv'}{$os}." list) 2>&1");
 	my @args = split /\n/, $output;
 	my %vars = map { split /=/, $_, 2 } @args;
 	return %vars;
 }
+#=skip
 
+#
 # gets default settings
+#
 sub get_grub2_def
 {
 	my $output = &backquote_command("(cat $config{'def_file'}) 2>&1");
@@ -418,8 +435,11 @@ sub get_grub2_def
 	my %vars = map { split /=/, $_, 2 } @args;
 	return %vars;
 }
+#=cut
 
+#
 # get commands hash of arrays
+#
 sub get_cmds
 {
 	%cmds = (
@@ -463,7 +483,9 @@ sub get_cmds
 	return %cmds
 }
 
+#
 # get device.map
+#
 sub get_devicemap
 {
 	my $output = &backquote_command("(cat $config{'dmap_file'}) 2>&1");
@@ -596,8 +618,11 @@ sub mk_array_without
 	@better = grep {	/^$end/ 	} @better;
 	return @better;
 }
+#=cut
 
+#
 # save menuentry as default saved
+#
 sub save_entry
 {
 	$name = shift;
@@ -640,13 +665,14 @@ our %env_setts = (
 				 `GRUB_TIMEOUT=-1` will cause the menu to be displayed until you select the boot entry manually.",
 				 
 				 GRUB_CMDLINE_LINUX => "Entries on this line are added to the end of the booting command line for both normal and recovery modes.
-				 It is used to pass options to the kernel.",
+				 It is used to pass options to the kernel. eg: \"init=/lib/systemd/systemd\", serial: \"console=tty0 console=ttyS0,115200n8\"",
 				 
-				 GRUB_CMDLINE_LINUX_DEFAULT => "Same as GRUB_CMDLINE_LINUX but the entries are passed and appended in the normal mode only.",
+				 GRUB_CMDLINE_LINUX_DEFAULT => "Same as GRUB_CMDLINE_LINUX but the entries are passed and appended in the normal mode only.
+				 eg. \"text elevator=deadline zcache nomodeset i915.modeset=0 nouveau.modeset=0 video=vesa:off vga=normal\"",
 				 
 				 GRUB_TERMINAL => "Enables and specifies input/output terminal device.
-				 Can be console (PC BIOS and EFI consoles), serial (serial terminal), ofconsole (Open Firmware console),
-				 or the default gfxterm (graphics-mode output).",
+				 Can be \"console\" (PC BIOS and EFI consoles), \"serial\" (serial terminal), \"ofconsole\" (Open Firmware console),
+				 or the default \"gfxterm\" (graphics-mode output).",
 				 
 				 GRUB_GFXMODE => "The resolution used for the gfxterm graphical terminal.
 				 Note that you can only use modes supported by your graphics card (VBE).
@@ -660,8 +686,105 @@ our %env_setts = (
 				 
 				 GRUB_BACKGROUND => "Set a background image for the gfxterm graphical terminal.
 				 The image must be a file readable by GRUB2 at boot time, and it must end with the .png, .tga, .jpg, or .jpeg suffix.
-				 If necessary, the image will be scaled to fit the screen."
+				 If necessary, the image will be scaled to fit the screen.",
+				 
+				 GRUB_DISABLE_RECOVERY => "Set `true` to disable generation of recovery mode menu entries",
+				 
+				 GRUB_TERMINAL_OUTPUT => "Where the grub menu is displayed: common: \"gfxterm\" - graphical terminal",
+				 
+				 GRUB_DISABLE_SUBMENU => "Set `true` to disable submenu branches.",
+				 
+				 GRUB_RECORDFAIL_TIMEOUT => "For `-1`, there will be no countdown and thus the menu will display;
+				 For `0`, menu will not display even for a failed startup;
+				 For >=1, menu will display for the specified number of seconds.",
+				 
+				 GRUB_SERIAL_COMMAND => "Set `GRUB_TERMINAL=serial`. May need to adjust `GRUB_CMDLINE_LINUX`.
+				 eg: \"serial --unit=0 --speed=9600 --word=8 --parity=no --stop=1\"",
+				 
+				 GRUB_DISTRIBUTOR => "OS release version. Fedora/CentOS: \"$(sed 's, release .*$,,g' /etc/system-release)\",
+				 Debian: \"`lsb_release -i -s 2> /dev/null || echo Debian`\"",
+				 
+				 GRUB_GFXPAYLOAD_LINUX => "How to handle the Graphics payload on Linux systems, common: \"keep\", \"text\"",
+				 
+				 GRUB_VIDEO_BACKEND => "Device to handle graphical requests, common: \"vbe\"",
+				 
+				 GRUB_FONT_PATH => "Location of font used, eg: \"/boot/grub2/fonts/LiberationSerif-Regular.pf2\"",
+				 
+				 GRUB_TERMINAL_OUTPUT => "Can be \"console\" (PC BIOS and EFI consoles),
+				 \"serial\" (serial terminal), \"ofconsole\" (Open Firmware console),
+				 or the default \"gfxterm\" (graphics-mode output).",
+				 
+				 GRUB_DISABLE_LINUX_UUID => "Set `true` if you don't want GRUB to pass \"root=UUID=xxx\" parameter to Linux",
+				 
+				 GRUB2_PASSWORD => "Global password",
+#				 
+#				  => "",
 				);
 
+#
+# disable user edit capablity
+#
+sub make_user_file
+{
+	my $file = $config{'cfgd_dir'}."/01_users";
+	my $eg = <<EOV;
+#!/bin/sh -e
+cat << EOF
+if [ -f \${prefix}/user.cfg ]; then
+	source \${prefix}/user.cfg
+	if [ -n "\${GRUB2_PASSWORD}" ]; then
+		set superusers="root"
+		export superusers
+		password_pbkdf2 root \${GRUB2_PASSWORD}
+	fi
+fi
+EOV
+}
 
+###### BACKUP ######
+
+#
+# backup cfg
+#
+sub backup_cfg
+{
+	my $file = $config{'cfg_file'};
+	&copy_source_dest ($file, "$file.webmin-bak".time());
+}
+
+#
+# backup default grub file
+#
+sub backup_default
+{
+	my $file = $config{'def_file'};
+	&copy_source_dest ($file, "$file.webmin-bak".time());
+}
+
+#
+# backup grub.d directory
+#
+sub backup_grubd
+{
+	my $dir = $config{'cfgd_dir'};
+	&copy_source_dest ($file, "$file.webmin-bak".time());
+}
+
+#
+# backup system grub default file
+#
+sub backup_sysdefault
+{
+	my $file = $config{'sys_file'};
+	&copy_source_dest ($file, "$file.webmin-bak".time());
+}
+
+#
+# backup grub device map file
+#
+sub backup_devicemap
+{
+	my $file = $config{'dmap_file'};
+	&copy_source_dest ($file, "$file.webmin-bak".time());
+}
 ;1

@@ -32,6 +32,9 @@ use limit;	# limit virtual memory allocation
 #	&update_button()."<br>".
 	&help_search_link("grub2", "man", "doc", "google"), undef, undef,
 	&text('index_version', $version));
+#print Dumper(%cmds);
+#print "install($os):".$cmds{'install'}{$os}." -V 2>&1";
+
 #&ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1);
 ## Check if grub2 is installed
 #if (!-x $config{'grub2_dir'}) {
@@ -69,14 +72,15 @@ use limit;	# limit virtual memory allocation
 		 ['summary', 	$text{'tab_sum'}]
 		);
 
-my %parsed = &divide_cfg_into_parsed_files();
-#print "parsed is ".Dumper (\%parsed)."||||";
-
 #print "parsed cfg is ".Dumper (\%grub2cfg)."||||";
 
 print ui_tabs_start(\@tabs, 'mode', 'summary');
 
+###### entry tab ######
 print ui_tabs_start_tab('mode', 'entry');
+
+	my %parsed = &divide_cfg_into_parsed_files();
+	#print "parsed is ".Dumper (\%parsed)."||||";
 
 	#while (my ($key,$value) = each %{$grub2cfg{$sb}{$i}{'opts_vars'}}) {
 	#	$array[$key] = $value;
@@ -169,6 +173,7 @@ print ui_tabs_start_tab('mode', 'entry');
 
 print ui_tabs_end_tab('mode', 'entry');
 
+###### environ tab ######
 print ui_tabs_start_tab('mode', 'environ');
 
 #    #plain open document creation here
@@ -198,15 +203,14 @@ print ui_tabs_start_tab('mode', 'environ');
 		$text{'select'},
 		$text{'var'},
 		$text{'val'} ],	100);
-	for (keys %grub2def) {
-			my @cols;
-#	    push(@cols, "<a class=\"del\" href=\"delenv.cgi\">$text{'del'}</a>".
-#			push (@cols, "<a href=\"do_env.cgi?var=".&urlize($_)."&amp;was=".&urlize($grub2env{$_}."&edit=Edit")."\">$_</a>");
-			push (@cols, "<span title=\"".$env_setts{$_}."\">$_</span>");
-#			push (@cols, "<a href=\"do_env.cgi?var=".&urlize($_)."&amp;was=".&urlize($grub2env{$_}."&edit=Edit")."\">$grub2env{$_}</a>");
-			push (@cols, $grub2def{$_});
-			print &ui_checked_columns_row(\@cols, undef, "sel", "$_&amp;was=$grub2def{$_}");
-		#}
+	for $a (keys %grub2def) {
+		my @cols;
+##	    push(@cols, "<a class=\"del\" href=\"delenv.cgi\">$text{'del'}</a>".
+##		push (@cols, "<a href=\"do_env.cgi?var=".&urlize($_)."&amp;was=".&urlize($grub2env{$_}."&edit=Edit")."\">$_</a>");
+		push (@cols, '<span title="'.$env_setts{$a}.'">'.$a.'</span>');
+##		push (@cols, "<a href=\"do_env.cgi?var=".&urlize($_)."&amp;was=".&urlize($grub2env{$_}."&edit=Edit")."\">$grub2env{$_}</a>");
+		push (@cols, '<input type="text" value="'.$grub2def{$a}.'" />');
+		print &ui_checked_columns_row(\@cols, undef, "sel", "$a");#&amp;was=$grub2def{$a}");
     }
     print &ui_columns_end();
     print &ui_links_row(\@links);
@@ -240,6 +244,7 @@ print ui_tabs_start_tab('mode', 'environ');
 
 print ui_tabs_end_tab('mode', 'environ');
 
+###### other tab ######
 print ui_tabs_start_tab('mode', 'other');
 
 	@array = (
@@ -272,6 +277,7 @@ print ui_tabs_start_tab('mode', 'other');
 
 print ui_tabs_end_tab('mode', 'other');
 	
+###### files tab ######
 print ui_tabs_start_tab('mode', 'files');
 
 	print "<dl>";
@@ -287,12 +293,14 @@ print ui_tabs_start_tab('mode', 'files');
 
 print ui_tabs_end_tab('mode', 'files');
 
+###### summary tab ######
 print ui_tabs_start_tab('mode', 'summary');
 
 	#while (my ($key,$value) = each %{$grub2cfg{$sb}{$i}{'opts_vars'}}) {
 	#	$array[$key] = $value;
 	#}
 	#print "grub2cfg_sb_i_'opts_vars' is:".Dumper($grub2cfg{$sb}{$i}{'opts_vars'});
+	#print "cfg is:".Dumper(%config);
 
 	@links = ( );
 	push(@links, &select_all_link("d"), &select_invert_link("d"));
@@ -304,10 +312,25 @@ print ui_tabs_start_tab('mode', 'summary');
 		$text{'summ_which'},
 		$text{'summ_config'},
 		$text{'summ_correct'} ], 100);
-#	foreach $sb (keys %grub2cfg) {	# each submenu
-#		foreach $i (keys $grub2cfg{$sb}) {	# each menu entry
-#			if ($grub2cfg{$sb}{$i}{'valid'}) {	# only show valid entries
-#				my @cols;
+	for (keys %config) {	# $config files/directories
+		if ($_ ne"highlight" && $_ ne"efi_arg") {
+			my @cols;
+			push (@cols, "config::$_");
+			push (@cols, (-e $config{$_}) ? $config{$_} : "not found");
+			push (@cols, $config{$_});
+			push (@cols, (-e $config{$_}) ? true : false);
+			print &ui_checked_columns_row(\@cols, \@tdtags, "d", "$_");
+		}
+	}
+	for (keys %cmds) {
+		my @cols;
+		push (@cols, $cmds{$_}{$os});
+		my $output = substr (&backquote_command ("(which ".$cmds{$_}{$os}.") 2>&1"), 0, 50);
+		push (@cols, $output);
+		push (@cols, "n/a");#$cmds{$_}{$os});
+		push (@cols, ($cmds{$_}{$os}eq$output) ? true : false);
+		print &ui_checked_columns_row(\@cols, \@tdtags, "d", "$_");
+	}
 #				push (@cols, $grub2cfg{$sb}{$i}{'id'});
 #				if (length ($grub2cfg{$sb}{$i}{'name'}) > 40) {	# menuentry name
 #					push (@cols, "<a title=\"".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\" href=\"edit.cgi?".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\">".(($grub2cfg{$sb}{$i}{'is_saved'}) ? "<strong>" : "").&html_escape (cutoff ($grub2cfg{$sb}{$i}{'name'}, 40, "...")).(($grub2cfg{$sb}{$i}{'is_saved'}) ? "</strong>" : "")."</a>");
@@ -361,7 +384,7 @@ print ui_tabs_start_tab('mode', 'summary');
 #				push (@cols, $grub2cfg{$sb}{$i}{'is_saved'});
 #				my @tdtags;	# highlight entire row of saved_entry if any:
 #				if ($grub2cfg{$sb}{$i}{'is_saved'}) {	for (my $i=1; $i<scalar (@cols)+1; $i++) {	$tdtags[$i]='style="background-color: '.$config{"highlight"}.'"';	}	}
-#				print &ui_checked_columns_row(\@cols, \@tdtags, "d", "sub=$sb&amp;item=$i,");
+				print &ui_checked_columns_row(\@cols, \@tdtags, "d", "sub=$sb&amp;item=$i,");
 #			}
 #		}
 #	}
