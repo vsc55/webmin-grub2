@@ -180,7 +180,7 @@ for my $a (@subs) {
 			} else {
 				if ($key) {
 					if ($key =~ m/^\$/) {
-						push(@{$eoptsarray{'var'}{$key}}, $e);
+						$eoptsarray{'var'}{$key} = $e;
 					} else {
 						push(@{$eoptsarray{$key}}, $e);
 					}
@@ -426,6 +426,13 @@ sub get_grub2_env
 #=skip
 
 #
+sub check_cfg
+{
+	my $output = &backquote_command("(".$cmds{'script-chk'}{$os}." ".$config{'cfg_file'}.") 2>&1");
+	return $output;
+}
+
+#
 # gets default settings
 #
 sub get_grub2_def
@@ -473,6 +480,14 @@ sub get_cmds
 		"fstest" => 	{	red => "grub2-fstest",			deb => "grub-fstest",			desc => "(unknown subject)",															version => ''},
 		"grubby" => 	{	red => "grubby",				deb => "grubby",				desc => "command line tool for configuring grub, lilo, elilo, yaboot and zipl",			version => ''},
 	);
+#	use Config::IniFiles;
+#	my $env_s = Config::IniFiles->new (-file => "./webmin-grub2_commands.ini");
+#	#print "The value is " . $env_s->val ('Section', 'Parameter') . "." if $env_s->val ('Section', 'Parameter');
+#	my %cmds = $env_s->Sections;
+#	for $a (keys %cmds){
+#		$cmds{$a} = [ red => $env_s->val ($a, 'red'), deb => $env_s->val ($a, 'tydebpe'), desc => $env_s->val ($a, 'desc') ];
+#	}
+#	$cmds{$_} = map {	[ desc => $env_s->val ($_, 'desc'), red => $env_s->val ($_, 'red'), deb => $env_s->val ($_, 'deb') ]	} keys %cmds;
 	for my $a (keys \%cmds) {
 		$output = &backquote_command ($cmds{$a}{$os}." -V 2>&1");
 		$cmds{$a}{'version'} = (split ' ', $output)[2];
@@ -629,52 +644,70 @@ sub save_entry
 	return (&backquote_command("(".$cmds{'default'}{$os}." $name) 2>&1"));
 }
 
-our %env_setts = (
-				 wasGRUB_DEFAULT => "Sets the default menu entry that will be booted next time the computer is rebooted.
+#
+sub get_defaults
+{
+	my %env_setts = (
+				 wasGRUB_DEFAULT => { desc => "Sets the default menu entry that will be booted next time the computer is rebooted.
 				 It can be a numeric value, a complete menu entry quotation, or `saved`. A few examples follow:
 				 
 				 `GRUB_DEFAULT=2` boots the third (counted from zero) boot menu entry.
 				 
 				 `GRUB_DEFAULT=2>0` boots the first entry from the third submenu.
 				 
-				 `GRUB_DEFAULT=\"Example boot menu entry\"` boots the menu entry whose title matches the quotation.
+				 `GRUB_DEFAULT='Example boot menu entry'` boots the menu entry whose title matches the quotation.
 				 
 				 `GRUB_DEFAULT=saved` boots the entry specified by the grub2-reboot or grub2-set-default commands.
 				 While grub2-reboot sets the default boot entry for the next reboot only, grub2-set-default sets the default boot entry until changed.",
+				 type => "text" },
 				 
-				 GRUB_DEFAULT => "Sets the default menu entry that will be booted next time the computer is rebooted.
+				 GRUB_BACKGROUND => { desc => "Set a background image for the gfxterm graphical terminal.
+				 The image must be a file readable by GRUB2 at boot time, and it must end with the .png, .tga, .jpg, or .jpeg suffix.
+				 If necessary, the image will be scaled to fit the screen.",
+				 type => "text" },
+				 
+				 GRUB_CMDLINE_LINUX => { desc => "Entries on this line are added to the end of the booting command line for both normal and recovery modes.
+				 It is used to pass options to the kernel. eg: 'init=/lib/systemd/systemd', serial: 'console=tty0 console=ttyS0,115200n8'",
+				 type => "text" },
+				 
+				 GRUB_CMDLINE_LINUX_DEFAULT => { desc => "Same as GRUB_CMDLINE_LINUX but the entries are passed and appended in the normal mode only.
+				 eg. 'text elevator=deadline zcache nomodeset i915.modeset=0 nouveau.modeset=0 video=vesa:off vga=normal'",
+				 type => "text" },
+				 
+				 GRUB_DEFAULT => { desc => "Sets the default menu entry that will be booted next time the computer is rebooted.
 				 It can be a numeric value, a complete menu entry quotation, or `saved`.
 				 While grub2-reboot sets the default boot entry for the next reboot only, grub2-set-default sets the default boot entry until changed.",
+				 type => "combo", options => [ "saved", "<menuentry name>", "<menuentry position number>" ], default => "saved" },
 				 
-				 GRUB_SAVEDEFAULT => "If set to true, it will automatically choose the last selected OS
-				 from the boot menu as the default boot entry on the next boot.
-				 For this to work, you also need to specify `GRUB_DEFAULT=saved`.",
+				 GRUB_DISABLE_LINUX_UUID => { desc => "Set `true` if you don't want GRUB to pass 'root=UUID=xxx' parameter to Linux",
+											 type => "select", options => [ "true", "false" ], default => "false" },
 				 
-				 GRUB_HIDDEN_TIMEOUT => "Waits the specified number of seconds for the user to press a key.
+				 GRUB_DISABLE_RECOVERY => { desc => "Set `true` to disable generation of recovery mode menu entries.",
+										   type => "select", options => [ "true", "false" ], default => "false" },#, ""
+				 
+				 GRUB_DISABLE_SUBMENU => { desc => "Set `true` to disable submenu branches.",
+										  type => "select", options => [ "true", "false" ], default => "false" },
+				 
+				 GRUB_DISTRIBUTOR => { desc => "OS release version. Fedora/CentOS: '$(sed 's, release .*$,,g' /etc/system-release)',
+				 Debian: '`lsb_release -i -s 2> /dev/null || echo Debian`'",
+				 type => "text" },
+				 
+				 GRUB_FONT_PATH => { desc => "Location of font used, eg: '/boot/grub2/fonts/LiberationSerif-Regular.pf2'",
+									type => "text" },
+				 
+				 GRUB_HIDDEN_TIMEOUT => { desc => "Waits the specified number of seconds for the user to press a key.
 				 During the period no menu is shown unless the user presses a key.
 				 If no key is pressed during the time specified, the control is passed to `GRUB_TIMEOUT`.
 				 `GRUB_HIDDEN_TIMEOUT=0` first checks whether Shift is pressed and
 				 shows the boot menu if yes, otherwise immediately boots the default menu entry.
 				 This is the default when only one bootable OS is identified by GRUB2.",
+				 type => "number" },
 				 
-				 GRUB_HIDDEN_TIMEOUT_QUIET => "If false is specified, a countdown timer is displayed on a
+				 GRUB_HIDDEN_TIMEOUT_QUIET => { desc => "If false is specified, a countdown timer is displayed on a
 				 blank screen when the `GRUB_HIDDEN_TIMEOUT` feature is active.",
+				 type => "select", options => [ "true", "false" ], default => "false" },
 				 
-				 GRUB_TIMEOUT => "Time period in seconds the boot menu is displayed before automatically booting the default boot entry.
-				 If you press a key, the timeout is cancelled and GRUB2 waits for you to make the selection manually.
-				 `GRUB_TIMEOUT=-1` will cause the menu to be displayed until you select the boot entry manually.",
-				 
-				 GRUB_CMDLINE_LINUX => "Entries on this line are added to the end of the booting command line for both normal and recovery modes.
-				 It is used to pass options to the kernel. eg: \"init=/lib/systemd/systemd\", serial: \"console=tty0 console=ttyS0,115200n8\"",
-				 
-				 GRUB_CMDLINE_LINUX_DEFAULT => "Same as GRUB_CMDLINE_LINUX but the entries are passed and appended in the normal mode only.
-				 eg. \"text elevator=deadline zcache nomodeset i915.modeset=0 nouveau.modeset=0 video=vesa:off vga=normal\"",
-				 
-				 GRUB_TERMINAL => "Enables and specifies input/output terminal device.
-				 Can be \"console\" (PC BIOS and EFI consoles), \"serial\" (serial terminal), \"ofconsole\" (Open Firmware console),
-				 or the default \"gfxterm\" (graphics-mode output).",
-				 
-				 GRUB_GFXMODE => "The resolution used for the gfxterm graphical terminal.
+				 GRUB_GFXMODE => { desc => "The resolution used for the gfxterm graphical terminal.
 				 Note that you can only use modes supported by your graphics card (VBE).
 				 The default is ‘auto’, which tries to select a preferred resolution.
 				 You can display the screen resolutions available to GRUB2 by typing vbeinfo in the GRUB2 command line.
@@ -683,43 +716,88 @@ our %env_setts = (
 				 You can also specify a color bit depth by appending it to the resolution setting, for example GRUB_GFXMODE=1280x1024x24.
 				 
 				 [Tip]	Setting the same resolution in GRUB2 and the operating system will slightly reduce the boot time.",
+				 type => "text" },
 				 
-				 GRUB_BACKGROUND => "Set a background image for the gfxterm graphical terminal.
-				 The image must be a file readable by GRUB2 at boot time, and it must end with the .png, .tga, .jpg, or .jpeg suffix.
-				 If necessary, the image will be scaled to fit the screen.",
+				 GRUB_GFXPAYLOAD_LINUX => { desc => "How to handle the Graphics payload on Linux systems, common: 'keep', 'text'",
+										   type => "select", options => [ "keep", "text" ], default => "keep" },
 				 
-				 GRUB_DISABLE_RECOVERY => "Set `true` to disable generation of recovery mode menu entries",
-				 
-				 GRUB_TERMINAL_OUTPUT => "Where the grub menu is displayed: common: \"gfxterm\" - graphical terminal",
-				 
-				 GRUB_DISABLE_SUBMENU => "Set `true` to disable submenu branches.",
-				 
-				 GRUB_RECORDFAIL_TIMEOUT => "For `-1`, there will be no countdown and thus the menu will display;
+				 GRUB2_PASSWORD => { desc => "Global password",
+									type => "text" },
+# ^^is GRUB2_ correct????				 
+ 				 GRUB_RECORDFAIL_TIMEOUT => { desc => "For `-1`, there will be no countdown and thus the menu will display;
 				 For `0`, menu will not display even for a failed startup;
 				 For >=1, menu will display for the specified number of seconds.",
+				 type => "number" },
 				 
-				 GRUB_SERIAL_COMMAND => "Set `GRUB_TERMINAL=serial`. May need to adjust `GRUB_CMDLINE_LINUX`.
-				 eg: \"serial --unit=0 --speed=9600 --word=8 --parity=no --stop=1\"",
+				 GRUB_SAVEDEFAULT => { desc => "If set to true, it will automatically choose the last selected OS
+				 from the boot menu as the default boot entry on the next boot.
+				 For this to work, you also need to specify `GRUB_DEFAULT=saved`.",
+				 type => "select", options => [ "true", "false" ], default => "false" },
 				 
-				 GRUB_DISTRIBUTOR => "OS release version. Fedora/CentOS: \"$(sed 's, release .*$,,g' /etc/system-release)\",
-				 Debian: \"`lsb_release -i -s 2> /dev/null || echo Debian`\"",
+				 GRUB_SERIAL_COMMAND => { desc => "Set `GRUB_TERMINAL=serial`. May need to adjust `GRUB_CMDLINE_LINUX`.
+				 eg: 'serial --unit=0 --speed=9600 --word=8 --parity=no --stop=1'",
+				 type => "text" },
 				 
-				 GRUB_GFXPAYLOAD_LINUX => "How to handle the Graphics payload on Linux systems, common: \"keep\", \"text\"",
+				 GRUB_TERMINAL => { desc => "Enables and specifies input/output terminal device.
+				 Can be 'console' (PC BIOS and EFI consoles), 'serial' (serial terminal),
+				 'ofconsole' (Open Firmware console), or the default 'gfxterm' (graphics-mode output).",
+				 type => "select", options => [ "serial", "console", "ofconsole", "gfxterm" ], default => "gfxterm" },
 				 
-				 GRUB_VIDEO_BACKEND => "Device to handle graphical requests, common: \"vbe\"",
+				 GRUB_TERMINAL_OUTPUT => { desc => "Can be 'console' (PC BIOS and EFI consoles),
+				 'serial' (serial terminal), 'ofconsole' (Open Firmware console),
+				 or the default 'gfxterm' (graphics-mode output).",
+				 type => "select", options => [ "console", "serial", "ofconsole", "gfxterm" ], default => "gfxterm" },
 				 
-				 GRUB_FONT_PATH => "Location of font used, eg: \"/boot/grub2/fonts/LiberationSerif-Regular.pf2\"",
+				 GRUB_TIMEOUT => { desc => "Time period in seconds the boot menu is displayed before automatically booting the default boot entry.
+				 If you press a key, the timeout is cancelled and GRUB2 waits for you to make the selection manually.
+				 `GRUB_TIMEOUT=-1` will cause the menu to be displayed until you select the boot entry manually.",
+				 type => "number" },
 				 
-				 GRUB_TERMINAL_OUTPUT => "Can be \"console\" (PC BIOS and EFI consoles),
-				 \"serial\" (serial terminal), \"ofconsole\" (Open Firmware console),
-				 or the default \"gfxterm\" (graphics-mode output).",
+				 GRUB_VIDEO_BACKEND => { desc => "Device to handle graphical requests, common: 'vbe'",
+										type => "select", options => [ "vbe", "none" ], default => "vbe" },
 				 
-				 GRUB_DISABLE_LINUX_UUID => "Set `true` if you don't want GRUB to pass \"root=UUID=xxx\" parameter to Linux",
+				 saved_entry => { desc => "Name of default menuentry to boot.", type => "text" }
 				 
-				 GRUB2_PASSWORD => "Global password",
 #				 
 #				  => "",
-				);
+			);
+#	use Config::IniFiles;
+#	my $env_s = Config::IniFiles->new (-file => "./webmin-grub2_defaults.ini");
+#	#print "The value is " . $env_s->val ('Section', 'Parameter') . "." if $env_s->val ('Section', 'Parameter');
+#	my %env_setts = $env_s->Sections;
+#	for $a (keys %env_setts){
+#		$env_setts{$a} = [ desc => $env_s->val ($a, 'desc'), type => $env_s->val ($a, 'type'), options => $env_s->val ($a, 'options') ];
+#	}
+#	$env_setts{$_} = map {	[ desc => $env_s->val ($_, 'desc'), type => $env_s->val ($_, 'type'), options => $env_s->val ($_, 'options') ]	} keys %env_setts;
+	return %env_setts;
+}
+our %env_setts = &get_defaults();
+
+sub get_grub2_files
+{
+	my %grub2files = (
+				   '00_header' => "is the script that loads GRUB settings from /etc/default/grub,
+				   including timeout, default boot entry, and others. We will talk more about these soon.",
+				   '05_debian_theme' => "defines the background, colors and themes.
+				   The name of this script is definitely going to change to when other distributions adopt GRUB 2.",
+				   '10_linux' => "loads the menu entries for the installed distribution.",
+				   '20_memtest86+' => "loads the memtest utility.",
+				   '30_os-prober' => "is the script that will scan the hard disks for other operating systems and add them to the boot menu.",
+				   '40_custom' => "is a template that you can use to create additional entries to be added to the boot menu.",
+				   '90_persistent' => "This is a special script which copies a corresponding part of the grub.cfg file and outputs it back unchanged.
+				   This way you can modify that part of grub.cfg directly and the change survives the execution of grub2-mkconfig."
+				   );
+#	use Config::IniFiles;
+#	my $env_s = Config::IniFiles->new (-file => "./webmin-grub2_files.ini");
+#	#print "The value is " . $env_s->val ('Section', 'Parameter') . "." if $env_s->val ('Section', 'Parameter');
+#	my %grub2files = $env_s->Sections;
+#	for $a (keys %grub2files){
+#		$grub2files{$a} = [ desc => $env_s->val ($a, 'desc'), type => $env_s->val ($a, 'type'), options => $env_s->val ($a, 'options') ];
+#	}
+#	$grub2files{$_} = map {	$_ => $env_s->val ('GENERAL', 'options') ]	} keys %grub2files;
+	return %grub2files;
+}
+our %grub2files = &get_grub2_files();
 
 #
 # disable user edit capablity
