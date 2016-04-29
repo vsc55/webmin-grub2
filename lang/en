@@ -9,11 +9,12 @@ index_mismatch=<p>GRUB2 is installed at <tt>$1</tt>, but the path in your config
 index_noentrys=No entries yet!
 index_short=GRUB2
 
-tab_files=Files Information
+tab_files=GRUB2 Commands
 tab_entry=Menu Entries
 tab_environ=Environment
 tab_other=Display settings
-tab_sum=Summary
+tab_sum=Diagnostic Info.
+tab_disks=Disks
 
 env_edit=Edit Environment
 env_was=Original value $1
@@ -46,8 +47,29 @@ deleting=Deleting $1
 editing=Editing $1
 entry=Entry
 entries=Entries
+yes=Yes
+no=No
+menuentry=menuentry
+checked=ticked
+unchecked=not ticked
+
+env_was=Original Value
 
 summ_file=File or Directory
-summ_which=Found at
 summ_config=Configuration says
-summ_correct=Correct
+summ_correct=Exists?
+
+disks_grub=GRUB2 Physical Drive
+disks_part=Local Disk/Partition
+disks_install=Install GRUB2 Bootloader
+
+edit_name=Name
+edit_class=Class Name
+edit_submenu=Submenu
+edit_protect=Unrestricted
+edit_optvar=Option Variable
+edit_id=ID
+edit_pos=Position
+edit_addclass=Add a class
+edit_save=Save as Default
+#edit_saved=SAVED AS DEFAULT
