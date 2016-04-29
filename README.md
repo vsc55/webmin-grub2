@@ -10,6 +10,8 @@
 
 .Improved hover information
 
+.Added module icon
+
 
 *0.01d
 
