@@ -9,32 +9,35 @@ index_mismatch=<p>GRUB2 is installed at <tt>$1</tt>, but the path in your config
 index_noentrys=No entries yet!
 index_short=GRUB2
 
-tab_files=GRUB2 Commands
+tab_files=HELP : GRUB2 Commands
 tab_entry=Menu Entries
 tab_environ=Environment
 tab_other=Display settings
-tab_sum=Diagnostic Info.
+tab_sum=HELP : Diagnostic Info.
 tab_disks=Disks
+tab_users=Users & Passwords
+tab_dump=file array dump
 
 env_edit=Edit Environment
 env_was=Original value $1
 
 entry_id=ID
 entry_name=Name
-entry_sub_name=in Submenu
+entry_sub_name=inside_Submenu
 entry_classes=Classes
 entry_mods=Modules
-entry_opt_var=Variables in Options
+entry_opt_var=Options_Variables
 entry_protected=Unrestricted
 entry_sets=Sets
-entry_opt_if=Conditions in Options
+entry_opt_if=Options_Conditions
 entry_mksaved=Make default
 entry_edit=click Name to Edit
+entry_inners=Inners
 
-item_show=Heading Name
-
+missing=Missing $1
 var=Variable
 val=Value
+clear=Clear
 delete=Delete
 select=Select
 noversion=n/a
@@ -49,11 +52,22 @@ entry=Entry
 entries=Entries
 yes=Yes
 no=No
+confirm=click to Confirm
+error=Error: 
 menuentry=menuentry
 checked=ticked
 unchecked=not ticked
+invalid=INVALID
+cannot=cannot complete action
+when= (as at $1)
+mbr=MasterBootRecord
 
-env_was=Original Value
+cfg_check=check
+cfg_OK=configuration is OK
+cfg_BAD=configuration is wrong
+cfg_main=main
+cfg_open=open
+cfg_close=protected
 
 summ_file=File or Directory
 summ_config=Configuration says
@@ -72,4 +86,22 @@ edit_id=ID
 edit_pos=Position
 edit_addclass=Add a class
 edit_save=Save as Default
-#edit_saved=SAVED AS DEFAULT
+edit_opts_if=Option If
+edit_set=Items Set
+edit_remove=Remove menuentry
+
+disp_show=Displayed
+disp_item=Heading Name
+
+user=User
+user_name=Name
+user_pass=Password
+user_conf=Comfirm
+user_passmm=Password and Confirm do not match
+user_super_none=<tt>No Superusers yet</tt>
+user_none=<tt>No Users yet</tt>
+user_init=No user file found, click <a href="$1">HERE</a> to create it.
+user_super=superuser
+user_cancel=Cancel
+user_adding=Adding user `$1` with password `$2`
+
