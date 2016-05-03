@@ -7,19 +7,20 @@ require './grub2-lib.pl';
 
 use limit;	# limit virtual memory allocation
 
+our $return = &this_url();
+
 # Page header
-&ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1, undef,
-				 (check_cfg) ? "cfg file OK" : "cfg is wrong".
-#	&update_button()."<br>".
-	&help_search_link("grub2", "man", "doc", "google"), undef, undef,
-	&text('index_version', $version));
+&ui_print_header (undef, $text{'index_title'}, "", undef, 1, 1, undef,
+				 &test_cfg_button()." <br />".
+	&help_search_link ("grub2", "man", "doc", "google"), undef, undef,
+	&text ('index_version', $version));
 
 #&ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1);
 ## Check if grub2 is installed
 #if (!-x $config{'grub2_dir'}) {
 #	print &text('index_notfound', $config{'grub2_dir'}),
 #		$text{'index_either'}. &text('index_modify',
-#			"$gconfig{'webprefix'}/config.cgi?$module_name").
+#			"$gconfig{'webprefix'}${dir_sep}config.cgi?$module_name").
 #		$text{'index_install'};	#, "<p>\n";
 #
 #	&foreign_require("software", "software-lib.pl");
@@ -46,10 +47,12 @@ use limit;	# limit virtual memory allocation
 @tabs = (
 		 ['entry', 		$text{'tab_entry'}],
 		 ['environ', 	$text{'tab_environ'}],
+		 ['disks',		$text{'tab_disks'}],
+		 ['users', 		$text{'tab_users'}],
 		 ['other', 		$text{'tab_other'}],
 		 ['files', 		$text{'tab_files'}],
 		 ['summary', 	$text{'tab_sum'}],
-		 ['disks',		$text{'tab_disks'}]
+		 ['dump',	 	$text{'tab_dump'}],
 		);
 
 #print "parsed cfg is ".Dumper (\%grub2cfg)."||||";
@@ -65,42 +68,30 @@ print ui_tabs_start_tab('mode', 'entry');
 	push(@links, &select_all_link("d"), &select_invert_link("d"));
 	print &ui_form_start("do_entry.cgi", "get");
 	print &ui_links_row(\@links);
-	print &ui_columns_start([
-		$text{'select'},
-		$text{'entry_id'},
-		$text{'entry_name'},
-		$text{'entry_sub_name'},
-		$text{'entry_classes'},
-		$text{'entry_mods'},
-		$text{'entry_opt_var'},
-		$text{'entry_protected'},
-		$text{'entry_sets'},
-		$text{'entry_inners'},
-		$text{'entry_opt_if'} ], 100);
+	my @array = ( $text{'select'} );	# begin the row with a checkbox
+	for (my $a=0; $a<keys %display; $a++) {
+		push (@array, $display{$a}{'name'}) if $display{$a}{'displayed'}==1;	# add each %display if marked as displayed
+	}
+	print &ui_columns_start(\@array, 100);
 	foreach $sb (keys %grub2cfg) {	# each submenu
 		foreach $i (keys $grub2cfg{$sb}) {	# each menu entry
 			if ($grub2cfg{$sb}{$i}{'valid'}) {	# only show valid entries
-				my @cols;
-				push (@cols, $grub2cfg{$sb}{$i}{'id'});
+				my %cols;
+				$cols{'id'} = $grub2cfg{$sb}{$i}{'id'};
 				if (length ($grub2cfg{$sb}{$i}{'name'}) > 40) {	# menuentry name
-					push (@cols, "<a title=\"".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\" href=\"edit.cgi?sub=$sb&amp;item=$i\">".(($grub2cfg{$sb}{$i}{'is_saved'}) ? "<strong>" : "").&html_escape (cutoff ($grub2cfg{$sb}{$i}{'name'}, 40, "...")).(($grub2cfg{$sb}{$i}{'is_saved'}) ? "</strong>" : "")."</a>");
+					$cols{'name'} = "<a title=\"".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\" href=\"edit.cgi?sub=$sb&amp;item=$i\">".(($grub2cfg{$sb}{$i}{'is_saved'}) ? "<strong>" : "").&html_escape (cutoff ($grub2cfg{$sb}{$i}{'name'}, 40, "...")).(($grub2cfg{$sb}{$i}{'is_saved'}) ? "</strong>" : "")."</a>";
 				} else {
-					push (@cols, "<a href=\"edit.cgi?sub=$sb&amp;item=$i\">".(($grub2cfg{$sb}{$i}{'is_saved'}) ? "<strong>" : "").&html_escape ($grub2cfg{$sb}{$i}{'name'}).(($grub2cfg{$sb}{$i}{'is_saved'}) ? "</strong>" : "")."</a>");
+					$cols{'name'} = "<a href=\"edit.cgi?sub=$sb&amp;item=$i\">".(($grub2cfg{$sb}{$i}{'is_saved'}) ? "<strong>" : "").&html_escape ($grub2cfg{$sb}{$i}{'name'}).(($grub2cfg{$sb}{$i}{'is_saved'}) ? "</strong>" : "")."</a>";
 				}
 				if (length ($grub2cfg{$sb}{'name'}) > 17) {	# submenu name
-					push (@cols, "<span title=\"".&html_escape ($grub2cfg{$sb}{'name'})."\">".&html_escape (substr ($grub2cfg{$sb}{'name'}, 0, 17)."...")."</span>");
+					$cols{'sub'} = "<span title=\"".&html_escape ($grub2cfg{$sb}{'name'})."\">".&html_escape (substr ($grub2cfg{$sb}{'name'}, 0, 17)."...")."</span>";
 				} else {
-					push (@cols, &html_escape ($grub2cfg{$sb}{'name'}));
+					$cols{'sub'} = &html_escape ($grub2cfg{$sb}{'name'});
 				}
 				if (length ($grub2cfg{$sb}{$i}{'classes'}) > 7) {	# options-classes
-					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'classes'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'classes'}}), 0, 7)."...")."</span>");
+					$cols{'class'} = "<span title=\"".&html_escape (join (", ", @{ $grub2cfg{$sb}{$i}{'classes'} }))."\">".&html_escape (substr (join (",", @{ $grub2cfg{$sb}{$i}{'classes'} }), 0, 7)."...")."</span>";
 				} else {
-					push (@cols, &html_escape (join (",", @{$grub2cfg{$sb}{$i}{'classes'}})));
-				}
-				if (length ($grub2cfg{$sb}{$i}{'insmod'}) > 5) {	# inner-mods
-					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'insmod'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'insmod'}}), 0, 5)."...")."</span>");
-				} else {
-					push (@cols, &html_escape (cutoff (join (",", @{$grub2cfg{$sb}{$i}{'insmod'}}), 5, "...")));
+					$cols{'class'} = &html_escape (join (",", @{ $grub2cfg{$sb}{$i}{'classes'} }));
 				}
 				my @array = ();
 				while (my ($key,$val) = each $grub2cfg{$sb}{$i}{'opts_vars'}) {
@@ -109,42 +100,55 @@ print ui_tabs_start_tab('mode', 'entry');
 				my $together = join ', ', @array;
 				if (length ($together) > 20) {
 					#push (@cols, &html_escape (cutoff (join (",", @array), 5, "...")));
-					push (@cols, '<span title="'.$together.'">'.&html_escape (substr ($together, 0, 20)."...").'</span>');
+					$cols{'ovar'} = '<span title="'.$together.'">'.&html_escape (substr ($together, 0, 20)."...").'</span>';
 				} else {
-					push (@cols, &html_escape ($together));#join (',', @array)));
-				}
-				if (length ($grub2cfg{$sb}{$i}{'protected'}) > 5) {	# options-unrestricted
-					push (@cols, "<span title=\"".&html_escape ($grub2cfg{$sb}{$i}{'protected'})."\">".&html_escape (substr ($grub2cfg{$sb}{$i}{'protected'}, 0, 5)."...")."</span>");
-				} else {
-					push (@cols, &html_escape ($grub2cfg{$sb}{$i}{'protected'}));
-				}
-				if (length ($grub2cfg{$sb}{$i}{'set'}) > 5) {
-					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'set'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'set'}}), 0, 5)."...")."</span>");
-				} else {
-					push (@cols, &html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'set'}}), 0, 5)."..."));
-				}
-				if (length ($grub2cfg{$sb}{$i}{'inners'}) > 5) {
-					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'inners'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'inners'}}), 0, 5)."...")."</span>");
-				} else {
-					push (@cols, &html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'inners'}}), 0, 5)."..."));
+					$cols{'ovar'} = &html_escape ($together);#join (',', @array)));
 				}
 				if (length ($grub2cfg{$sb}{$i}{'opts_if'}) > 5) {
-					push (@cols, "<span title=\"".&html_escape (join (", ", @{$grub2cfg{$sb}{$i}{'opts_if'}}))."\">".&html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'opts_if'}}), 0, 5)."...")."</span>");
+					$cols{'oif'} = "<span title=\"".&html_escape (join (", ", @{ $grub2cfg{$sb}{$i}{'opts_if'} }))."\">".&html_escape (substr (join (",", @{ $grub2cfg{$sb}{$i}{'opts_if'} }), 0, 5)."...")."</span>";
 				} else {
-					push (@cols, &html_escape (substr (join (",", @{$grub2cfg{$sb}{$i}{'opts_if'}}), 0, 5)."..."));
+					$cols{'oif'} = &html_escape (substr (join (",", @{ $grub2cfg{$sb}{$i}{'opts_if'} }), 0, 5)."...");
 				}
-				push (@cols, $grub2cfg{$sb}{$i}{'is_saved'});
+				if (length ($grub2cfg{$sb}{$i}{'protected'}) > 5) {	# options-unrestricted
+					$cols{'pro'} = "<span title=\"".&html_escape ($grub2cfg{$sb}{$i}{'protected'})."\">".&html_escape (substr ($grub2cfg{$sb}{$i}{'protected'}, 0, 5)."...")."</span>";
+				} else {
+					$cols{'pro'} = &html_escape ($grub2cfg{$sb}{$i}{'protected'});
+				}
+				if (length ($grub2cfg{$sb}{$i}{'users'}) > 5) {	# options-users
+					$cols{'users'} = "<span title=\"".&html_escape ($grub2cfg{$sb}{$i}{'users'})."\">".&html_escape (substr ($grub2cfg{$sb}{$i}{'users'}, 0, 5)."...")."</span>";
+				} else {
+					$cols{'users'} = &html_escape ($grub2cfg{$sb}{$i}{'users'});
+				}
+				if (length ($grub2cfg{$sb}{$i}{'insmod'}) > 5) {	# inner-mods
+					$cols{'mod'} = "<span title=\"".&html_escape (join (", ", @{ $grub2cfg{$sb}{$i}{'insmod'} }))."\">".&html_escape (substr (join (",", @{ $grub2cfg{$sb}{$i}{'insmod'} }), 0, 5)."...")."</span>";
+				} else {
+					$cols{'mod'} = &html_escape (cutoff (join (",", @{ $grub2cfg{$sb}{$i}{'insmod'} }), 5, "..."));
+				}
+				if (length ($grub2cfg{$sb}{$i}{'set'}) > 5) {
+					$cols{'set'} = "<span title=\"".&html_escape (join (", ", @{ $grub2cfg{$sb}{$i}{'set'} }))."\">".&html_escape (substr (join (",", @{ $grub2cfg{$sb}{$i}{'set'} }), 0, 5)."...")."</span>";
+				} else {
+					$cols{'set'} = &html_escape (substr (join (",", @{ $grub2cfg{$sb}{$i}{'set'} }), 0, 5)."...");
+				}
+				if (length ($grub2cfg{$sb}{$i}{'inners'}) > 5) {
+					$cols{'ins'} = "<span title=\"".&html_escape (join (", ", @{ $grub2cfg{$sb}{$i}{'inners'} }))."\">".&html_escape (substr (join (",", @{ $grub2cfg{$sb}{$i}{'inners'}}), 0, 5)."...")."</span>";
+				} else {
+					$cols{'ins'} = &html_escape (substr (join (",", @{ $grub2cfg{$sb}{$i}{'inners'} }), 0, 5)."...");
+				}
+				#push (@cols, $grub2cfg{$sb}{$i}{'is_saved'});
 				my @tdtags;	# highlight entire row of saved_entry if any:
-				if ($grub2cfg{$sb}{$i}{'is_saved'}) {	for (my $i=1; $i<scalar (@cols)+1; $i++) {	$tdtags[$i]='style="background-color: '.$config{"highlight"}.'"';	}	}
-				print &ui_checked_columns_row(\@cols, \@tdtags, "d", "sub=$sb&amp;item=$i,");
+				if ($grub2cfg{$sb}{$i}{'is_saved'}) {	for (my $i=1; $i<(keys %cols)+1; $i++) {	$tdtags[$i]='style="background-color: '.$config{"highlight"}.'"';	}	}
+				my @columns = ();	# make the row...
+				for (my $a=0; $a<keys %cols; $a++) {
+					my $item = $display{$a}{'nick'};	# sort the columns using %display as a guide
+					push (@columns, $cols{$item}) if 1 == $display{$a}{'displayed'};	# only if marked as displayed
+				}
+				print &ui_checked_columns_row(\@columns, \@tdtags, "d", "sub=$sb&amp;item=$i,");
 			}
 		}
 	}
 	print &ui_columns_end();
 	print &ui_links_row(\@links);
 	print &ui_form_end([	["delete", $text{'delete'}], ["mksaved", $text{'entry_mksaved'}], ["edit", $text{'entry_edit'}]	]);
-
-	print "hash_grub2cfg:".Dumper(\%grub2cfg);
 
 print ui_tabs_end_tab('mode', 'entry');
 
@@ -169,7 +173,7 @@ print ui_tabs_start_tab('mode', 'environ');
 
 	my %grub2def = &get_grub2_def();
 	my %grub2env = &get_grub2_env();
-    for $a (keys %grub2env) {
+    for my $a (keys %grub2env) {
 	    if ($grub2env{$a} && $a) {
 			$grub2def{$a} = $grub2env{$a};
 		}
@@ -204,7 +208,7 @@ print ui_tabs_start_tab('mode', 'environ');
 		$text{'var'},
 		$text{'env_was'},
 		$text{'val'} ],	100);
-	for $a (keys %grub2def) {
+	for my $a (keys %grub2def) {
 		my @cols;
 ##	    push(@cols, "<a class=\"del\" href=\"delenv.cgi\">$text{'del'}</a>".
 ##		push (@cols, "<a href=\"do_env.cgi?var=".&urlize($_)."&amp;was=".&urlize($grub2env{$_}."&edit=Edit")."\">$_</a>");
@@ -213,11 +217,9 @@ print ui_tabs_start_tab('mode', 'environ');
 		push (@cols, $grub2def{$a});
 		if ($env_setts{$a}{'type'} eq "select" && $env_setts{$a}{'options'}) {
 			my $string = '<select name="'.$a.'">'."\n";
-			for $opt (@{ $env_setts{$a}{'options'} }) {
+			for my $opt (@{ $env_setts{$a}{'options'} }) {
 				$string.= '<option value="'.$opt.'"';
-				if ($opt eq $env_setts{$a}{'default'}) {
-					$string.= ' selected="selected"';
-				}
+				$string.= ' selected="selected"' if $opt eq $env_setts{$a}{'default'};
 				$string.= '>'.$opt.'</option>'."\n";
 			}
 			$string.= '</select>'."\n";
@@ -225,21 +227,67 @@ print ui_tabs_start_tab('mode', 'environ');
 		} elsif ($env_setts{$a}{'type'} eq "combo") {	# HTML 5
 			my $value = $grub2def{$a};
 			$value =~ s/\"/\'/g;
-			my $string = '<input type="text" value="'.$value.'" size="80" list="mylist" id="'.$a.'" name="'.$a.'"  />'."\n";
-			$string.= '<datalist>'."\n";	# HTML 5
+			#my $string = '<input type="text" value="'.$value.'" size="80" list="mylist" id="'.$a.'" name="'.$a.'" />'."\n";
+			#my $string = '<style type="text/css">.search_field {display: inline-block;border: 1px inset #ccc;}.search_field input {border: none;}.search_field button {border: none;background: none;}</style>';#padding: 0;
+			#$string.= '<div class="search_field">';
+			my $string;
+			$string.= '<input type="text" size="80" value="'.$value.'" list="mylist" id="input_'.$a.'" name="'.$a.'" />'."\n";# value="'.$value.'"
+			$string.= '<img id="img_'.$a.'" src="images/clear.png" alt="'.$text{'clear'}.'" />';#onclick="javascript:document.getElementById("input_'.$a.'").value=\'\'" 
+			$string.= '<script type="text/javascript">
+			var nameElement = document.getElementById("img_'.$a.'");
+			function nameClear(e) {
+				document.getElementById("input_'.$a.'").value=\'\';
+			}
+			if ( nameElement.addEventListener ) {	nameElement.addEventListener("click", nameClear, false);
+			} else if ( nameElement.attachEvent ) {	nameElement.attachEvent("onclick", nameClear);	}
+			</script>';
+			#$string.= '<script language="JavaScript">'."\n\t".'document.getElementById("selected").defaultSelected = true;'."\n".'</script>'."\n";
+			$string.= '<datalist id="mylist">'."\n";	# HTML 5
 			#$string.= "<select name=\"".$grub2def{$a}."\" onchange=\"combo(this, '".$grub2def{$a}."')\" onmouseout=\"comboInit(this, '".$grub2def{$a}."')\" >";	# HTML 4~
-			for $opt (@{ $env_setts{$a}{'options'} }) {
-				$string.= '<option value="'.$opt.'"';
-				if ($opt eq $env_setts{$a}{'default'}) {
-					$string.= ' selected="selected"';
+			for my $opt (@{ $env_setts{$a}{'options'} }) {
+				if ($opt =~ /<menuentry name>/) {
+					for my $op (keys %grub2cfg) {
+						for my $op2 (%{ $grub2cfg{$op} }) {
+							if ($grub2cfg{$op}{$op2}{'valid'}==1) {
+								$string.= "\t".'<option';
+								$string.= ' value="'.$grub2cfg{$op}{$op2}{'name'}.'"';
+								$string.= ' selected id="selected"' if $grub2cfg{$op}{$op2}{'name'} eq $env_setts{$a}{'default'};
+								$string.= '> ';
+								$string.= $grub2cfg{$op}{'name'}.' > ';# if $grub2cfg{$op}{'name'};
+								$string.= $grub2cfg{$op}{$op2}{'name'}."\n";
+							}
+						}
+					}
+					next;
 				}
-				$string.= '> '.$opt;
-				#$string.= '</option>';	# HTML 4~
-				$string.= "\n";
+				if ($opt =~ /<menuentry position number>/) {
+					for my $op (keys %grub2cfg) {
+						for my $op2 (%{ $grub2cfg{$op} }) {
+							if ($grub2cfg{$op}{$op2}{'valid'}==1) {
+								$string.= "\t".'<option';
+								$string.= ' value="'.$op.'>'.$op2.'"';
+								$string.= ' selected id="selected"' if $grub2cfg{$op}{$op2}{'name'} eq $env_setts{$a}{'default'};
+								$string.= '> ';
+								$string.= $grub2cfg{$op}{'name'}.' > ';# if $grub2cfg{$op}{'name'};
+								$string.= $grub2cfg{$op}{$op2}{'name'}."\n";
+							}
+						}
+					}
+					next;
+				} else {
+					$string.= "\t".'<option';
+					$string.= ' value="'.$opt.'"';
+					$string.= ' selected id="selected"' if $opt eq $env_setts{$a}{'default'};
+					$string.= '> ';
+					$string.= $opt;
+					#$string.= ' </option>';	# HTML 4~
+					$string.= "\n";
+				}
 			}
 			$string.= '</datalist>'."\n";
+			#$string.= '</div>';
 			push (@cols, $string);
-		} elsif ($env_setts{$a}{'type'} eq "text") {
+		} else {#elsif ($env_setts{$a}{'type'} eq "text") {
 			my $string = $grub2def{$a};
 			$string =~ s/\"/\'/g;
 			push (@cols, '<input type="'.$env_setts{$a}{'type'}.'" value="'.$string.'" size="80" />');
@@ -281,33 +329,29 @@ print ui_tabs_end_tab('mode', 'environ');
 ###### other tab ######
 print ui_tabs_start_tab('mode', 'other');
 
-	@array = (
-			  0 => 	[	'name' => 	$text{'entry_id'},			'pos' => 0, 'on' => true	],
-			  1 => 	[	'name' => 	$text{'entry_name'},		'pos' => 1, 'on' => true	],
-			  2 => 	[	'name' => 	$text{'entry_sub_name'},	'pos' => 2, 'on' => true	],
-			  3 => 	[	'name' => 	$text{'entry_classes'},		'pos' => 3, 'on' => true	],
-			  4 => 	[	'name' => 	$text{'entry_mods'},		'pos' => 4, 'on' => true	],
-			  5 => 	[	'name' => 	$text{'entry_opt_var'},		'pos' => 5, 'on' => false	],
-			  6 => 	[	'name' => 	$text{'entry_protected'},	'pos' => 6, 'on' => true	],
-			  7 => 	[	'name' => 	$text{'entry_sets'},		'pos' => 7, 'on' => true	],
-			  8 => 	[	'name' => 	$text{'entry_inners'},		'pos' => 8, 'on' => false	],
-			  9 => 	[	'name' => 	$text{'entry_opt_if'},		'pos' => 9, 'on' => true	]
-			 );
 	@links = ( );
-	push(@links, &select_all_link("d"), &select_invert_link("d"));
-	print &ui_form_start("delete_entry.cgi", "get");
+	push(@links, &select_all_link("disp"), &select_invert_link("disp"));
+	print &ui_form_start("display_save.cgi", "post");
 	print &ui_links_row(\@links);
 	print &ui_columns_start([
-		$text{'select'},
-		$text{'item_show'} ], 100);
-	for $a (@array) {
+		$text{'disp_show'},
+		$text{'disp_item'} ], 100);
+	my $count = 0;
+	for my $a (sort keys %display) {
 		my @cols;
-		push (@cols, $a['name']);
-		print &ui_checked_columns_row (\@cols, undef, "d", $a, $a['on']);
+		push (@cols, '<input type="text" name="disp_name" value="'.$display{$a}{'name'}.'" />'."\n".#$count.'|'.$display{$a}{'name'}
+			  #'<input type="hidden" name="disp_all" value="'.$count.'|'.$display{$a}{'displayed'}.'|'.$display{$a}{'nick'}.'|'.$display{$a}{'name'}.'" />');
+			  "");
+		#print &ui_checked_columns_row (\@cols, undef, "disp", $display{$a}{'nick'}, $display{$a}{'displayed'});#
+		print &ui_checked_columns_row (\@cols, undef, "disp", $count.'|'.$display{$a}{'displayed'}.'|'.$display{$a}{'nick'}.'|'.$display{$a}{'name'}, $display{$a}{'displayed'});#
+		++$count;
 	}
 	print &ui_columns_end();
 	print &ui_links_row(\@links);
-	print &ui_form_end([ [ "delete", $text{'delete'} ] ]);
+	#print &ui_form_end();
+	print &ui_form_end([ [ "save", $text{'save'} ] ]);
+	
+	#print Dumper(%hash);
 
 print ui_tabs_end_tab('mode', 'other');
 	
@@ -378,63 +422,120 @@ print ui_tabs_start_tab('mode', 'disks');
 
 	my %dmap = &get_devicemap();
 	#print "dmap:".Dumper(%dmap)."||||";
-	my @disks = &backquote_command ("(find /dev -group disk) 2>&1");
-	#print "disks:".Dumper(@disks)."||||";
-	my @array = ();
-	my %hash;
-	for $a (keys %dmap) {
-		for $b (@disks) {
-			if ($b =~ /$dmap{$a}/) {
-				push (@array, $b);
-				push (@{ $hash{$a} }, $b) if $b !~ /^$dmap{$a}$/;
+	if ($dir_sep == '/') {
+		my @disks = &backquote_command ("(find /dev -group disk) 2>&1");
+		#print "disks:".Dumper(@disks)."||||";
+		my @array = ();
+		my %hash;
+		for my $a (keys %dmap) {
+			for my $b (@disks) {
+				if ($b =~ /$dmap{$a}/) {
+					push (@array, $b);
+					#push (@{ $hash{$a} }, $b) if $b !~ /^$dmap{$a}$/;
+					my $more = ($b =~ /^$dmap{$a}$/) ? "($text{'mbr'}) " : "";
+					push (@{ $hash{$a} }, "$b $more");
+				}
 			}
 		}
-	}
-	#print "disks:".Dumper(@array)."||||<br />";
-	#print "hash:".Dumper(%hash)."||||";
+		#print "disks:".Dumper(@array)."||||<br />";
+		#print "hash:".Dumper(%hash)."||||";
 	
 #	my @array = grep {	/(k	} @disks;
-	@links = ( );
-	push(@links, &select_all_link("d"), &select_invert_link("d"));
-	print &ui_form_start("install_grub2.cgi", "get");
-	print &ui_links_row(\@links);
-	print &ui_columns_start([
-		$text{'select'},
-		$text{'disks_grub'},
-		$text{'disks_part'},
-		#$text{'disks_grub'}
-		], 100);
-	for $a (keys %hash) {
-		my $previ;
-		for $b (@{ $hash{$a} }) {
-			my @cols;
-			push (@cols, "$a : $dmap{$a}");
-			push (@cols, $b);
-			print &ui_radio_columns_row (\@cols, \@tdtags, "sel", "chosen", 1);
-			print &ui_columns_row (undef);# if $prev eq $b;
-			$previ = $b;
+		@links = ( );
+		push(@links, &select_all_link("d"), &select_invert_link("d"));
+		print &ui_form_start("install_grub2.cgi", "get");
+		print &ui_links_row(\@links);
+		print &ui_columns_start([
+			$text{'select'},
+			$text{'disks_grub'},
+			$text{'disks_part'},
+			#$text{'disks_grub'}
+			], 100);
+		for my $a (keys %hash) {
+			my $previ;
+			for my $b (@{ $hash{$a} }) {
+				my @cols;
+				#push (@cols, "$a : $dmap{$a}");
+				push (@cols, "($a)");
+				push (@cols, $b);
+				print &ui_radio_columns_row (\@cols, \@tdtags, "sel", "chosen", 1);
+				print &ui_columns_row (undef);# if $prev eq $b;
+				$previ = $b;
+			}
+			#if ($_ ne"highlight" && $_ ne"efi_arg") {
+			#	my @cols;
+			#	push (@cols, $my_cfg{$_});
+			#	push (@cols, $config{$_});
+			#	push (@cols, (-e $config{$_}) ? $text{"yes"} : $text{"no"});
+			#	print &ui_columns_row(\@cols, \@tdtags, "d", "$_");
+			#}
 		}
-		#if ($_ ne"highlight" && $_ ne"efi_arg") {
+		#for (keys %cmds) {
 		#	my @cols;
-		#	push (@cols, $my_cfg{$_});
-		#	push (@cols, $config{$_});
-		#	push (@cols, (-e $config{$_}) ? $text{"yes"} : $text{"no"});
+		#	push (@cols, $cmds{$_}{$os});
+		#	my $output = substr (&backquote_command ("(which ".$cmds{$_}{$os}.") 2>&1"), 0, 50);
+		#	push (@cols, $output);
+		#	push (@cols, ($cmds{$_}{$os}eq$output) ? true : false);
 		#	print &ui_columns_row(\@cols, \@tdtags, "d", "$_");
 		#}
+		print &ui_columns_end();
+		print &ui_links_row(\@links);
+		print &ui_form_end([	["install", $text{'disks_install'}]	]);
 	}
-	#for (keys %cmds) {
-	#	my @cols;
-	#	push (@cols, $cmds{$_}{$os});
-	#	my $output = substr (&backquote_command ("(which ".$cmds{$_}{$os}.") 2>&1"), 0, 50);
-	#	push (@cols, $output);
-	#	push (@cols, ($cmds{$_}{$os}eq$output) ? true : false);
-	#	print &ui_columns_row(\@cols, \@tdtags, "d", "$_");
-	#}
-	print &ui_columns_end();
-	print &ui_links_row(\@links);
-	print &ui_form_end([	["install", $text{'disks_install'}]	]);
 
 print ui_tabs_end_tab('mode', 'disks');
+
+###### users tab ######
+print ui_tabs_start_tab('mode', 'users');
+
+	my %users = $grub2cfg{'users'};
+	my @form_btns = ( );
+	push (@form_btns, [	"add", $text{'add'}	]);
+	print &ui_form_start ("user_edit.cgi", "post");
+	
+	if (keys %users>1) {
+		push (@form_btns, [	"delete", $text{'delete'}	]);
+		print "users:".Dumper(%users)."|||";
+		@links = ( );
+		push (@links, &select_all_link("d"), &select_invert_link("d"));
+		print &ui_links_row (\@links);
+		print &ui_columns_start ([
+			$text{'select'},
+			$text{'all'},
+			$text{'user_name'},
+			$text{'user_pass'},
+			$text{'user_pass2'},
+			$text{'user_super'},
+			], 100);
+		for my $a (keys %users) {
+			my @cols;
+			push (@cols, "a:".Dumper($a)."|||");
+			push (@cols, '<input type="text" name="user_name" value="'.$a.'" />'."\n");
+			push (@cols, ($users{$a}{'pass'}) ? '*****' : '');
+			push (@cols, ($a{'pass'}) ? '**a**' : 'a');
+			push (@cols, ($a{'is_super'}>0) ? $text{'yes'} : $text{'no'});
+			print &ui_checked_columns_row (\@cols, undef, "d", "d_value:$a");
+		}
+		print &ui_columns_end();
+		print &ui_links_row(\@links);
+	} elsif (!-f $config{'cfgd_dir'}. $dir_sep. '01_users') {
+		print &text('user_init', "create_user.cgi");
+		&make_user_file();
+	} else {
+		print $text{'user_none'};
+	}
+	print &ui_form_end (\@form_btns);
+	
+	#print Dumper(%hash);
+
+print ui_tabs_end_tab('mode', 'users');
+
+###### dump tab ######
+print ui_tabs_start_tab('mode', 'dump');
+
+	print "hash_grub2cfg:".Dumper(\%grub2cfg);
+
+print ui_tabs_end_tab('mode', 'dump');
 
 print ui_tabs_end();
 
@@ -509,7 +610,7 @@ if (@disks) {
 			&ui_link("edit_disk.cgi?device=$d->{'device'}",$d->{'desc'}),
 			$d->{'size'} ? &nice_size($d->{'size'}) : "",
 			$d->{'model'},
-			scalar(@{$d->{'parts'}}),
+			scalar(@{ $d->{'parts'} }),
 			$hasctrl ? ( join(" ", @ctrl) ) : ( ),
 			&ui_links_row(\@links),
 			]);

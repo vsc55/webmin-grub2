@@ -1,5 +1,16 @@
 # webmin-grub2
 
+*0.01f
+
+.Added manage users
+
+.Improved edit menuentries
+
+.Improved 'Environment'
+
+.Improved 'Display Settings'
+
+
 *0.01e
 
 .Made options variables show correctly

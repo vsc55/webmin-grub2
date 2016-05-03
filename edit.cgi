@@ -5,18 +5,23 @@
 require './grub2-lib.pl';
 &ReadParse();
 
-# $grub2cfg{$sb}{$i};
 my $sb = $in{'sub'};
 my $i = $in{'item'};
 
 if ($sb+$i) {	# existing
 	#print &ui_print_header ($text{'index_title'}, ");#\"".$grub2cfg{$sb}{$i}{'name'}."\"", "");
-	&ui_print_header (undef, "$text{'edit'} $text{'menuentry'}", "");
+	&ui_print_header ($text{'index_title'}, "$text{'edit'} $text{'menuentry'}", "");
 	
-	print &ui_form_start ("edit_save.cgi", "form-data"),
-		&ui_hidden ("sb", $sb), "\n",
-		&ui_hidden ("i", $i), "\n",
+	print &ui_form_start ("edit_save.cgi", "post"),#"form-data"),
+		&ui_hidden ("sb", $sb),# "\n",
+		&ui_hidden ("i", $i),
+		&ui_hidden ("valid", $grub2cfg{$sb}{$i}{'valid'}),
+		&ui_hidden ("id", $grub2cfg{$sb}{$i}{'id'}),
+		&ui_hidden ("saveit", $grub2cfg{$sb}{$i}{'is_saved'}),
+		&ui_hidden ("pos", "'$sb>$i'"),
+		&ui_hidden ("submenu", $grub2cfg{$sb}{'name'}),
 		&ui_table_start ($text{'edit_entry'}, "width=100%", 2);#, \@tds)
+			print &ui_table_row ($text{'invalid'}, "") if $grub2cfg{$sb}{$i}{'valid'}!=1;
 			print &ui_table_row ($text{'edit_id'}, $grub2cfg{$sb}{$i}{'id'});
 			print &ui_table_row ($text{'edit_name'},
 				&ui_textbox ("entry_name", $grub2cfg{$sb}{$i}{'name'}, 80, 0, undef));# "onChange='$onch'"));
@@ -31,16 +36,21 @@ if ($sb+$i) {	# existing
 		for $c (@{ $grub2cfg{$sb}{$i}{'classes'} }) {
 #			print &ui_table_row (&hlink($text{'edit_class'}, "entry_name$count"),
 			print &ui_table_row (($count==0) ? $text{'edit_class'} : '',
-				&ui_textbox ("class$count", $c, 20, 0, undef));# "onChange='$onch'"));#$grub2cfg{$sb}{$i}{'classes'}{
+				&ui_textbox ("class", $c, 20, 0, undef).
+				&ui_button ($text{'delete'}, "delete_class[$count]"));# "onChange='$onch'"));#$grub2cfg{$sb}{$i}{'classes'}{
 			$count++;
 		}
 			print &ui_table_row ($text{'edit_addclass'},
-				&ui_textbox ("class$count++", '', 20, 0, undef));
+				&ui_button ($text{'add'}, "class[$count++]"));
+
+#HIDE			#print &ui_table_row ($text{'edit_addclass'},
+			#	&ui_textbox ("class$count++", '', 20, 0, undef));
 		my $cnt = 0;
 		for $v (keys %{ $grub2cfg{$sb}{$i}{'opts_vars'} }) {
 			print &ui_table_row (($cnt==0) ? $text{'edit_optvar'} : '',
-				&ui_textbox ("optvar$cnt", $v, 25, 0, undef). " = ".
-				&ui_textbox ("optvar$cnt-val", $grub2cfg{$sb}{$i}{'opts_vars'}{$v}, 80, 0, undef));
+				&ui_textbox ("optvar", $v, 25, 0, undef). " = ".
+				&ui_textbox ("optval", $grub2cfg{$sb}{$i}{'opts_vars'}{$v}, 80, 0, undef).
+				&ui_button ($text{'delete'}, "delete_optvar$cnt"));
 			$cnt++;
 		}
 			print &ui_table_row ($text{'edit_protect'},
@@ -53,12 +63,32 @@ if ($sb+$i) {	# existing
 			#} else {
 			#	print &ui_table_row ($text{'edit_protected'}, "");
 			#}
+		if ($grub2cfg{$sb}{$i}{'opts_if'}) {
+			my $cntoif = 0;
+			for $v (@{ $grub2cfg{$sb}{$i}{'opts_if'} }) {
+				print &ui_table_row (($cntoif==0) ? $text{'edit_opts_if'} : '',
+					&ui_textbox ("opts_if", $v, 25, 0, undef).
+					&ui_button ($text{'delete'}, "delete_opts_if$cntoif"));
+				$cntoif++;
+			}
+		}
+		if ($grub2cfg{$sb}{$i}{'set'}) {
+			my $cntiset = 0;
+			for $v (@{ $grub2cfg{$sb}{$i}{'set'} }) {
+				print &ui_table_row (($cntiset==0) ? $text{'edit_set'} : '',
+					&ui_textbox ("set", $v, 25, 0, undef).
+					&ui_button ($text{'delete'}, "delete_set$cntiset"));
+				$cntiset++;
+			}
+		}
 		print &ui_table_end(),
 #		&ui_submit ( ["save", $text{'save'} ], [ "delete", $text{'delete'} ] ),
-		&ui_submit ($text{'save'}),
+		&ui_submit ($text{'save'}, "save"),
+		&ui_submit ($text{'edit_remove'}, "delete"),
+		#&ui_submit ($text{'save'}),
 	&ui_form_end();
 	
-	print Dumper(%{ $grub2cfg{$sb}{$i} });
+	#print Dumper(%{ $grub2cfg{$sb}{$i} });
 #'all'=CentOS Linux (3.10.0-327.10.1.el7.x86_64) 7 (Core)\' --class rhel fedora --class gnu-linux --class gnu --class os --unrestricted $menuentry_id_option \'gnulinux-3.10.0-229.20.1.el7.x86_64-advanced-39a93f7d-8195-45e6-ac88-0cefae8bdaec\' {
 #	load_video
 #	set gfxpayload=keep
@@ -75,12 +105,6 @@ if ($sb+$i) {	# existing
 #	initrd16 /initramfs-3.10.0-327.10.1.el7.x86_64.img
 #}
 #';
-#''={
-#           '$menuentry_id_option' => [
-#                                       '\'gnulinux-3.10.0-229.20.1.el7.x86_64-advanced-39a93f7d-8195-45e6-ac88-0cefae8bdaec\''
-#                                     ]
-#         };
-#'set'=undef;
 
 	&ui_print_footer("$return", $text{'index_short'});	# click to return
 } else {	# new entry

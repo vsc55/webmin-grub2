@@ -28,6 +28,21 @@ our $os = ($gconfig{'os_type'}=~/(gentoo-linux|redhat-linux|suse-linux)/) 	? 	"r
 our %cmds = &get_cmds();
 my $output = &backquote_command ($cmds{'install'}{$os}." -V 2>&1");
 our $version = (split ' ', $output)[2];	# get common version
+our $max_cols = 10;
+our $dir_sep = ($gconfig{'os_type'}=~/windows/) ? '\\' : '/';
+our %display = (
+	0 => 	{	'nick' => "id",		'name' => $text{'entry_id'},		'displayed' => 1	},
+	1 => 	{	'nick' => "name",	'name' => $text{'entry_name'},		'displayed' => 1	},
+	2 => 	{	'nick' => "sub",	'name' => $text{'entry_sub_name'},	'displayed' => 1	},
+	3 => 	{	'nick' => "class",	'name' => $text{'entry_classes'},	'displayed' => 1	},
+	4 => 	{	'nick' => "ovar",	'name' => $text{'entry_opt_var'},	'displayed' => 1	},
+	5 => 	{	'nick' => "oif",	'name' => $text{'entry_opt_if'},	'displayed' => 0	},
+	6 => 	{	'nick' => "pro",	'name' => $text{'entry_protected'},	'displayed' => 1	},
+	7 =>	{	'nick' => "users",	'name' => $text{'entry_users'},		'displayed' => 1	},
+	8 => 	{	'nick' => "mod",	'name' => $text{'entry_mods'},		'displayed' => 1	},
+	9 => 	{	'nick' => "set",	'name' => $text{'entry_sets'},		'displayed' => 0	},
+	10 => 	{	'nick' => "ins",	'name' => $text{'entry_inners'},	'displayed' => 0	},
+);
 
 my %grub2env = &get_grub2_env();	# read environment
 my $cfgfile = &load_cfg_file();	# build config array/hash
@@ -93,6 +108,40 @@ our %grub2cfg;
 	#	$subs[$index] =~ s/^(submenu\s+)//;
 	#}
 #}
+#my @username, @userpass;	# arrays of users and passwords
+#my %hash;	# hash of users
+while ($cfgfile =~ /^\s*password\s+(\w)\s+(\w)$/m) {
+	#push (@username, $1);	# each user
+	#push (@userpass, $2);	# each user's password
+#	$hash{$1} = { 'pass' => $2, 'is_super' => 0 };	# add user hash (password, is_super) to hash
+	$grub2cfg{'users'}{$1} = { 'pass' => $2, 'is_super' => 0 };	# add user hash (password, is_super) to hash
+}
+#my $username = join ",", @username;
+#my $userpass = join ",", @userpass;
+my ($superusers) = $cfgfile =~ /^\s*set superusers=\"([^"]+)$/m;	# all superusers
+#my @users = ();	# array of users
+if ($superusers) {	# superusers?
+	#@users = split /,\s*/, $superusers;	# first append each superuser
+	for (keys %hash) {
+		#$hash{$_}{'is_super'} = 1;	# set user's is_super as true
+		$grub2cfg{'users'}{$_}{'is_super'} = 1;	# set user's is_super as true
+	}
+	$grub2cfg{'superusers'} = $superusers;	# store superuser string
+	#for (@users) {
+	#	$hash{$_} = '';	# first set superuser with blank password
+	#	if ($userpass =~ /\Q$_\E/) {
+	#		$hash{$_} = $1;	# set superuser with password, if exists
+	#	}
+	#}
+#} elsif ($#username) {	# normal users?
+#	for (@username) {
+#		$hash{$_} = '';	# first set superuser with blank password
+#		if ($userpass =~ /\Q$_\E/) {
+#			$hash{$_} = $1;	# set superuser with password, if exists
+#		}
+#	}
+}
+#$grub2cfg{'users'} = $hash;	# store user hash
 my $count = 0;
 for my $a (@subs) {
 	my $index = 0;
@@ -103,7 +152,7 @@ for my $a (@subs) {
 	#}
 	my $valid = 0;
 	if ($a =~ m/^[\"']([^\"']+)[\"']\s*(.[^\{]+)/) {	$valid = 1;	}
-	my $sname = ($valid == 1) ? $1 : "main";
+	my $sname = ($valid == 1) ? $1 : $text{'cfg_main'};
 	my $tempopts = $2;
 	my $tempopts_noif;
 	if ($tempopts =~ m/(if.*fi)/) {
@@ -175,14 +224,14 @@ for my $a (@subs) {
 			#print "[".$array[$cntr]."]";
 			if ($e =~ /^[^a-zA-z\"']/) {	# first letter is not alpha or quote
 				$key = ($e =~ m/^\-\-(.*)$/) ? $1 : $e;
-				push(@{$eoptsarray{$key}}, true) if $array[($cntr+1)] =~ m/^[^a-zA-z\"']/;
+				push (@{ $eoptsarray{$key} }, true) if $array[($cntr+1)] =~ m/^[^a-zA-z\"']/;
 				#print "*key*";
 			} else {
 				if ($key) {
 					if ($key =~ m/^\$/) {
 						$eoptsarray{'var'}{$key} = $e;
 					} else {
-						push(@{$eoptsarray{$key}}, $e);
+						push (@{ $eoptsarray{$key} }, $e);
 					}
 				} else {
 					$eoptsarray{$array[$cntr-1]} = true;
@@ -192,7 +241,8 @@ for my $a (@subs) {
 			$cntr++;
 		}
 		my $cls = $eoptsarray{'class'};
-		my $unr = ($eoptsarray{'unrestricted'}) ? true : false;
+		my $users = $eoptsarray{'users'};
+		my $unr = ($eoptsarray{'unrestricted'}) ? $text{'cfg_open'} : $text{'cfg_close'};
 		my $optv = $eoptsarray{'var'};
 		#print "eoptsarray is ".Dumper(\%eoptsarray);
 		#print ":options:".Dumper(\@array);
@@ -235,14 +285,14 @@ for my $a (@subs) {
 #			$d =~ s/;;$//g;
 #			if ($d =~ /;;$/) {
 #				$key = ($d =~ m/^\-\-(.*)$/) ? $1 : $d;
-#				push(@{$einsarray{$key}}, true) if $array[($cntr+1)] =~ m/^[^a-zA-z\"']/;
+#				push(@{ $einsarray{$key} }, true) if $array[($cntr+1)] =~ m/^[^a-zA-z\"']/;
 #				#print "*key*";
 #			} else {
 #				if ($key) {
 #					if ($key =~ m/^\$/) {
-#						push(@{$einsarray{'var'}{$key}}, $d);
+#						push(@{ $einsarray{'var'}{$key} }, $d);
 #					} else {
-#						push(@{$einsarray{$key}}, $d);
+#						push(@{ $einsarray{$key} }, $d);
 #					}
 #				} else {
 #					$einsarray{$array[$cntr-1]} = true;
@@ -312,11 +362,12 @@ for my $a (@subs) {
 		#$grub2cfg{$count}{'submenu'} = $a;
 		$grub2cfg{$count}{$ecnt} = {	# build cfg hash
 									id =>			$ecnt,
-									name =>			(defined $ename) ? $ename : "main",
+									name =>			(defined $ename) ? $ename : $text{'cfg_main'},
 									valid =>		$valid,
 			#						options =>		$eopts,#join " ", $eopts,#join " ", %pre,
 									classes =>		$cls,
 									protected =>	$unr,
+									users =>		$users,
 									opts_vars =>	$optv,
 									opts_if =>		$pre_if,
 									#inners =>		%eoptions,#@eiarray,#$eins,#join ", ", @eins,#join " ", %ins,#$inner,
@@ -377,7 +428,7 @@ for my $a (@subs) {
 #}
 #foreach $sub (@subs) {	# add each menuentry to its section of the whole array
 #	foreach (split /menuentry\s/, $sub) {
-#		push (@{$sub}, $_);
+#		push (@{ $sub }, $_);
 #	}
 #}
 #my @main_entrys = split /menuentry\s/, shift @subs;
@@ -426,10 +477,57 @@ sub get_grub2_env
 #=skip
 
 #
+# recreate_cfg
+#
+sub recreate_cfg
+{
+	#my $output = "recreate_cfg:[backquote_command (".$cmds{'install'}{$os}." $config{'cfg_file'}) 2>&1]";
+	my $output = &backquote_command ("(".$cmds{'mkconfig'}{$os}." $config{'cfg_file'}) 2>&1");
+	return undef if $output = "";
+	return $output;
+}
+
+#
+# backup a file / dir
+#
+sub grub2_backup
+{
+	&redirect ("backup.cgi?what=".@_[0]."&return=". &this_url());
+}
+
+#gives this url
+sub this_url
+{
+	my $url = $ENV{'SCRIPT_NAME'};
+	$url .= "?$ENV{'QUERY_STRING'}" if ($ENV{'QUERY_STRING'} ne "");
+	#chop ($url) if substr ($url, -1)=='/';
+	return $url;
+}
+
+#
 sub check_cfg
 {
-	my $output = &backquote_command("(".$cmds{'script-chk'}{$os}." ".$config{'cfg_file'}.") 2>&1");
-	return $output;
+	my $out = &backquote_command("(".$cmds{'script-chk'}{$os}." ".$config{'cfg_file'}.") 2>&1");
+	if ($out =~ /failed/) {
+		return "<pre>".&html_escape($out)."</pre>";
+    } else {
+		return undef;
+    }
+	return $out;
+}
+
+#
+sub test_cfg_button
+{
+	my $localtime = localtime();
+	#my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+	#$year += 1900;
+	#print "$sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst\n";
+	my $args = "redir=".&urlize(&this_url());
+	my $retn = (check_cfg) ? $text{"cfg_BAD"} : $text{'cfg_OK'};
+	$retn.= '&nbsp;:&nbsp;<a href="test_cfg.cgi?'.$args.'">'. $text{'cfg_check'}. '</a><br />';
+	$retn.= &text ('when', "$localtime");
+	return $retn;
 }
 
 #
@@ -509,31 +607,13 @@ sub get_devicemap
 	return %vars;
 }
 
-## test config files
-#sub test_config
-#{
-#  return undef;
-#  if ($config{'test_config'} == 1) {
-#    my $out = &backquote_command("(/etc/init.d/grub2 configtest) 2>&1");
-#    if ($out =~ /failed/) {
-#      return "<pre>".&html_escape($out)."</pre>";
-#    }
-#    else {
-##    elsif ($out =~ /successful/) {
-#      return undef;
-#    }
-#    return $text{'test_err'};
-#  }
-#  return undef;
-#}
-
 #
 # load_cfg_file (<optional filename>)
 #
 sub load_cfg_file
 {
 	my $file = @_[0];
-	my $file = "/boot/grub2/grub.cfg" if @_[0] eq "";	# $config{'cfg_file'}
+	my $file = "${dir_sep}boot${dir_sep}grub2${dir_sep}grub.cfg" if @_[0] eq "";	# $config{'cfg_file'}
 	my $cfgfile = do {
 		local $/ = undef;
 		open my $fh, "<", $file
@@ -776,8 +856,9 @@ our %env_setts = &get_defaults();
 sub get_grub2_files
 {
 	my %grub2files = (
-				   '00_header' => "is the script that loads GRUB settings from /etc/default/grub,
+				   '00_header' => "is the script that loads GRUB settings from `/etc/default/grub`,
 				   including timeout, default boot entry, and others. We will talk more about these soon.",
+				   '01_users' => "users and passwords",
 				   '05_debian_theme' => "defines the background, colors and themes.
 				   The name of this script is definitely going to change to when other distributions adopt GRUB 2.",
 				   '10_linux' => "loads the menu entries for the installed distribution.",
@@ -785,7 +866,7 @@ sub get_grub2_files
 				   '30_os-prober' => "is the script that will scan the hard disks for other operating systems and add them to the boot menu.",
 				   '40_custom' => "is a template that you can use to create additional entries to be added to the boot menu.",
 				   '90_persistent' => "This is a special script which copies a corresponding part of the grub.cfg file and outputs it back unchanged.
-				   This way you can modify that part of grub.cfg directly and the change survives the execution of grub2-mkconfig."
+				   This way you can modify that part of `grub.cfg` directly and the change survives the execution of grub2-mkconfig."
 				   );
 #	use Config::IniFiles;
 #	my $env_s = Config::IniFiles->new (-file => "./webmin-grub2_files.ini");
@@ -798,71 +879,4 @@ sub get_grub2_files
 	return %grub2files;
 }
 our %grub2files = &get_grub2_files();
-
-#
-# disable user edit capablity
-#
-sub make_user_file
-{
-	my $file = $config{'cfgd_dir'}."/01_users";
-	my $eg = <<EOV;
-#!/bin/sh -e
-cat << EOF
-if [ -f \${prefix}/user.cfg ]; then
-	source \${prefix}/user.cfg
-	if [ -n "\${GRUB2_PASSWORD}" ]; then
-		set superusers="root"
-		export superusers
-		password_pbkdf2 root \${GRUB2_PASSWORD}
-	fi
-fi
-EOV
-}
-
-###### BACKUP ######
-
-#
-# backup cfg
-#
-sub backup_cfg
-{
-	my $file = $config{'cfg_file'};
-	&copy_source_dest ($file, "$file.webmin-bak".time());
-}
-
-#
-# backup default grub file
-#
-sub backup_default
-{
-	my $file = $config{'def_file'};
-	&copy_source_dest ($file, "$file.webmin-bak".time());
-}
-
-#
-# backup grub.d directory
-#
-sub backup_grubd
-{
-	my $dir = $config{'cfgd_dir'};
-	&copy_source_dest ($file, "$file.webmin-bak".time());
-}
-
-#
-# backup system grub default file
-#
-sub backup_sysdefault
-{
-	my $file = $config{'sys_file'};
-	&copy_source_dest ($file, "$file.webmin-bak".time());
-}
-
-#
-# backup grub device map file
-#
-sub backup_devicemap
-{
-	my $file = $config{'dmap_file'};
-	&copy_source_dest ($file, "$file.webmin-bak".time());
-}
 ;1
