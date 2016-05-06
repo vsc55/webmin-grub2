@@ -5,6 +5,10 @@
 require './grub2-lib.pl';
 &ReadParse();
 
+if ($in{'cancel'}) {
+	&redirect ($return);#$text{'index_short'})
+}
+
 my $sb = $in{'sb'};
 my $i = $in{'i'};
 my $id = $in{'id'};

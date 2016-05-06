@@ -7,10 +7,13 @@ require './grub2-lib.pl';
 
 my $sb = $in{'sub'};
 my $i = $in{'item'};
+my $heading = ($sb+$i) ? $text{'edit'} : $text{'add'};
+
+#print &ui_print_header ($text{'index_title'}, ");#\"".$grub2cfg{$sb}{$i}{'name'}."\"", "");
+&ui_print_header ($text{'index_title'}, "$heading $text{'menuentry'}", "");
+#print "sub:$sb|". Dumper (%in). "item:$i||";
 
 if ($sb+$i) {	# existing
-	#print &ui_print_header ($text{'index_title'}, ");#\"".$grub2cfg{$sb}{$i}{'name'}."\"", "");
-	&ui_print_header ($text{'index_title'}, "$text{'edit'} $text{'menuentry'}", "");
 	
 	print &ui_form_start ("edit_save.cgi", "post"),#"form-data"),
 		&ui_hidden ("sb", $sb),# "\n",
@@ -108,5 +111,52 @@ if ($sb+$i) {	# existing
 
 	&ui_print_footer("$return", $text{'index_short'});	# click to return
 } else {	# new entry
-	&redirect("");	# just retrurn
+	
+	print &ui_form_start ("edit_save.cgi", "post"),#"form-data"),
+		&ui_table_start ($text{'edit_entry'}, "width=100%", 2);#, \@tds)
+			print &ui_table_row ($text{'edit_name'},
+				&ui_textbox ("entry_name", $name, 80, 0, undef));# "onChange='$onch'"));
+			print &ui_table_row ($text{'edit_save'},
+				&ui_checkbox ("saveit", $is_saved));
+			print &ui_table_row ($text{'edit_pos'}, $pos);
+#			print &ui_table_row ($text{'edit_submenu'}, '"'.$grub2cfg{$sb}{'name'}.'"') if $sb>0;
+		my $count = 0;
+			print &ui_table_row ($text{'edit_addclass'},
+				&ui_button ($text{'add'}, "class[$count++]"));
+
+#HIDE			#print &ui_table_row ($text{'edit_addclass'},
+			#	&ui_textbox ("class$count++", '', 20, 0, undef));
+		my $cnt = 0;
+			print &ui_table_row ($text{'edit_protect'},
+				&ui_checkbox ("protectit", $protected));
+			#if ($grub2cfg{$sb}{$i}{'protected'} eq true) {
+			#	print &ui_table_row ($text{'edit_protected'}, &ui_yesno_radio("protectit", 1));
+			#} else {
+			#	print &ui_table_row ($text{'edit_protected'}, "");
+			#}
+		#if ($grub2cfg{$sb}{$i}{'opts_if'}) {
+		#	my $cntoif = 0;
+		#	for $v (@{ $grub2cfg{$sb}{$i}{'opts_if'} }) {
+		#		print &ui_table_row (($cntoif==0) ? $text{'edit_opts_if'} : '',
+		#			&ui_textbox ("opts_if", $v, 25, 0, undef).
+		#			&ui_button ($text{'delete'}, "delete_opts_if$cntoif"));
+		#		$cntoif++;
+		#	}
+		#}
+		#if ($grub2cfg{$sb}{$i}{'set'}) {
+		#	my $cntiset = 0;
+		#	for $v (@{ $grub2cfg{$sb}{$i}{'set'} }) {
+		#		print &ui_table_row (($cntiset==0) ? $text{'edit_set'} : '',
+		#			&ui_textbox ("set", $v, 25, 0, undef).
+		#			&ui_button ($text{'delete'}, "delete_set$cntiset"));
+		#		$cntiset++;
+		#	}
+		#}
+		print &ui_table_end(),
+#		&ui_submit ( ["save", $text{'save'} ], [ "delete", $text{'delete'} ] ),
+		&ui_submit ($text{'save'}, "save"),
+		&ui_submit ($text{'cancel'}, "cancel"),
+		#&ui_submit ($text{'save'}),
+	&ui_form_end();
+
 }

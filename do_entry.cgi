@@ -4,6 +4,26 @@
 
 require './grub2-lib.pl';
 &ReadParse();
+
+if ($in{'add'}) {
+	#add a custom menuentry
+	&redirect("edit.cgi");
+}
+my @ids = split /,/, $in{'d'};
+#print "ids is:".Dumper(@ids);
+#my $cfgfile = &load_cfg_file();
+#print Dumper(%grub2cfg);
+#$count = scalar (@ids);
+my @id2 = ();
+for $a (@ids) {
+	my ($ss, $ii) = $a =~ /sub=([0-9]+)[^=]+=([0-9]+)/;
+	push (@id2, {	"name" => $grub2cfg{$ss}{$ii}{'name'},
+					"submenu" => $ss,
+					"item" => $ii	});
+}
+if ($in{'edit'}) {
+	&redirect("edit.cgi?sub=".$id2[0]{'submenu'}."&item=".$id2[0]{'item'});
+}
 =was
 my $file = "$server_root/$config{'virt_dir'}/$in{'editfile'}";
 if (!-e $file) {
@@ -12,23 +32,12 @@ if (!-e $file) {
 =cut
 &ui_print_header($title, $text{'manual_title'}, "");
 print &text('manual_header', "<tt>$file</tt>"),"<p>\n";
+print "in:". Dumper (%in). "||<br />\n";
+#print "id2:". Dumper (@id2). "||<br />\n";
 #for $a (keys %in) {
 #	print "$a => $in{$a}\n";
 #}
 #print "in is".Dumper(%in);
-my @ids = split /,/, $in{'d'};
-#print "ids is:".Dumper(@ids);
-#my $cfgfile = &load_cfg_file();
-#print Dumper(%grub2cfg);
-$count = scalar (@ids);
-my @id2 = ();
-for $a (@ids) {
-	my ($ss, $ii) = $a =~ /sub=([0-9]+)[^=]+=([0-9]+)/;
-	#print "submenu is $sb; entry is $i\n";
-	push (@id2, {	"name" => $grub2cfg{$ss}{$ii}{'name'},
-					"submenu" => $ss,
-					"item" => $ii	});
-}
 #print "looking for:\"submenu\"$id2[0]{$ss}.\"item\"$id2[0]{$ii}.";
 print "id2 is:".Dumper(@id2);
 
@@ -169,4 +178,4 @@ print &ui_submit($text{'save'});
 print &ui_form_end();
 =cut
 
-&ui_print_footer("$return", "server listing");
+&ui_print_footer($return, $text{'index_short'});

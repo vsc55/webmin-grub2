@@ -6,6 +6,7 @@ require './grub2-lib.pl';
 &ReadParse();
 
 use limit;	# limit virtual memory allocation
+use Config::IniFiles;
 
 our $return = &this_url();
 
@@ -14,6 +15,13 @@ our $return = &this_url();
 				 &test_cfg_button()." <br />".
 	&help_search_link ("grub2", "man", "doc", "google"), undef, undef,
 	&text ('index_version', $version));
+
+if (!%grub2cfg) {
+	print $text{'index_either'}.' '.
+		&text ('index_modify', "$gconfig{'webprefix'}${dir_sep}config.cgi?$module_name").' '.
+		$text{'index_install'}.' '.
+		&text ('index_mkconfig', "make_cfg.cgi");
+}
 
 #&ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1);
 ## Check if grub2 is installed
@@ -148,13 +156,21 @@ print ui_tabs_start_tab('mode', 'entry');
 	}
 	print &ui_columns_end();
 	print &ui_links_row(\@links);
-	print &ui_form_end([	["delete", $text{'delete'}], ["mksaved", $text{'entry_mksaved'}], ["edit", $text{'entry_edit'}]	]);
+	print &ui_form_end([	["delete", $text{'delete'}], 	["mksaved", $text{'entry_mksaved'}], 	["edit", $text{'entry_edit'}]	]);
+
+    print &ui_form_start("edit.cgi", "post");
+		#print &ui_hidden ("sub", $sb),
+		#&ui_hidden ("item", $i);
+	#print &ui_form_end([	 ["edit", $text{'entry_edit'}],	["add", $text{'add'}]	]);
+	print &ui_form_end([	 ["add", $text{'add'}]	]);
+
 
 print ui_tabs_end_tab('mode', 'entry');
 
 ###### environ tab ######
 print ui_tabs_start_tab('mode', 'environ');
 
+#print "env_setts:". Dumper (%env_setts). "||||";
 #    #plain open document creation here
 #    print &ui_form_start("create_server.cgi", "form-data");
 #
@@ -206,25 +222,29 @@ print ui_tabs_start_tab('mode', 'environ');
     print &ui_columns_start([
 		$text{'select'},
 		$text{'var'},
-		$text{'env_was'},
+		&text ('env_was', ''),
 		$text{'val'} ],	100);
 	for my $a (keys %grub2def) {
+		#$a = lc $a;
 		my @cols;
 ##	    push(@cols, "<a class=\"del\" href=\"delenv.cgi\">$text{'del'}</a>".
 ##		push (@cols, "<a href=\"do_env.cgi?var=".&urlize($_)."&amp;was=".&urlize($grub2env{$_}."&edit=Edit")."\">$_</a>");
-		push (@cols, '<span title="'.$env_setts{$a}{'desc'}.'">'.$a.'</span>');
+		push (@cols, '<span title="'.$env_setts{lc $a}{'desc'}.'">'.$a.'</span>');
 ##		push (@cols, "<a href=\"do_env.cgi?var=".&urlize($_)."&amp;was=".&urlize($grub2env{$_}."&edit=Edit")."\">$grub2env{$_}</a>");
 		push (@cols, $grub2def{$a});
-		if ($env_setts{$a}{'type'} eq "select" && $env_setts{$a}{'options'}) {
+		#print "type:". $env_setts{lc $a}{'type'}. "|||<br />\n";
+		#print "opts:". $env_setts{lc $a}{'options'}. "|||<br />\n";
+		my @options = split /,\s*/, $env_setts{lc $a}{'options'};
+		if ($env_setts{lc $a}{'type'} eq "select" && $env_setts{lc $a}{'options'}) {
 			my $string = '<select name="'.$a.'">'."\n";
-			for my $opt (@{ $env_setts{$a}{'options'} }) {
+			for my $opt (@options) {
 				$string.= '<option value="'.$opt.'"';
-				$string.= ' selected="selected"' if $opt eq $env_setts{$a}{'default'};
+				$string.= ' selected="selected"' if $opt eq $env_setts{lc $a}{'default'};
 				$string.= '>'.$opt.'</option>'."\n";
 			}
 			$string.= '</select>'."\n";
 			push (@cols, $string);
-		} elsif ($env_setts{$a}{'type'} eq "combo") {	# HTML 5
+		} elsif ($env_setts{lc $a}{'type'} eq "combo") {	# HTML 5
 			my $value = $grub2def{$a};
 			$value =~ s/\"/\'/g;
 			#my $string = '<input type="text" value="'.$value.'" size="80" list="mylist" id="'.$a.'" name="'.$a.'" />'."\n";
@@ -237,6 +257,7 @@ print ui_tabs_start_tab('mode', 'environ');
 			var nameElement = document.getElementById("img_'.$a.'");
 			function nameClear(e) {
 				document.getElementById("input_'.$a.'").value=\'\';
+				document.getElementById("input_'.$a.'").placeholder=\''.$text{'combo_all'}.'\';
 			}
 			if ( nameElement.addEventListener ) {	nameElement.addEventListener("click", nameClear, false);
 			} else if ( nameElement.attachEvent ) {	nameElement.attachEvent("onclick", nameClear);	}
@@ -244,14 +265,14 @@ print ui_tabs_start_tab('mode', 'environ');
 			#$string.= '<script language="JavaScript">'."\n\t".'document.getElementById("selected").defaultSelected = true;'."\n".'</script>'."\n";
 			$string.= '<datalist id="mylist">'."\n";	# HTML 5
 			#$string.= "<select name=\"".$grub2def{$a}."\" onchange=\"combo(this, '".$grub2def{$a}."')\" onmouseout=\"comboInit(this, '".$grub2def{$a}."')\" >";	# HTML 4~
-			for my $opt (@{ $env_setts{$a}{'options'} }) {
-				if ($opt =~ /<menuentry name>/) {
+			for my $opt (@options) {
+				if ($opt =~ /^<menuentry name>$/) {
 					for my $op (keys %grub2cfg) {
 						for my $op2 (%{ $grub2cfg{$op} }) {
 							if ($grub2cfg{$op}{$op2}{'valid'}==1) {
 								$string.= "\t".'<option';
 								$string.= ' value="'.$grub2cfg{$op}{$op2}{'name'}.'"';
-								$string.= ' selected id="selected"' if $grub2cfg{$op}{$op2}{'name'} eq $env_setts{$a}{'default'};
+								$string.= ' selected id="selected"' if $grub2cfg{$op}{$op2}{'name'} eq $env_setts{lc $a}{'default'};
 								$string.= '> ';
 								$string.= $grub2cfg{$op}{'name'}.' > ';# if $grub2cfg{$op}{'name'};
 								$string.= $grub2cfg{$op}{$op2}{'name'}."\n";
@@ -260,13 +281,13 @@ print ui_tabs_start_tab('mode', 'environ');
 					}
 					next;
 				}
-				if ($opt =~ /<menuentry position number>/) {
+				if ($opt =~ /^<menuentry position number>$/) {
 					for my $op (keys %grub2cfg) {
 						for my $op2 (%{ $grub2cfg{$op} }) {
 							if ($grub2cfg{$op}{$op2}{'valid'}==1) {
 								$string.= "\t".'<option';
 								$string.= ' value="'.$op.'>'.$op2.'"';
-								$string.= ' selected id="selected"' if $grub2cfg{$op}{$op2}{'name'} eq $env_setts{$a}{'default'};
+								$string.= ' selected id="selected"' if $grub2cfg{$op}{$op2}{'name'} eq $env_setts{lc $a}{'default'};
 								$string.= '> ';
 								$string.= $grub2cfg{$op}{'name'}.' > ';# if $grub2cfg{$op}{'name'};
 								$string.= $grub2cfg{$op}{$op2}{'name'}."\n";
@@ -277,7 +298,7 @@ print ui_tabs_start_tab('mode', 'environ');
 				} else {
 					$string.= "\t".'<option';
 					$string.= ' value="'.$opt.'"';
-					$string.= ' selected id="selected"' if $opt eq $env_setts{$a}{'default'};
+					$string.= ' selected id="selected"' if $opt eq $env_setts{lc $a}{'default'};
 					$string.= '> ';
 					$string.= $opt;
 					#$string.= ' </option>';	# HTML 4~
@@ -290,14 +311,19 @@ print ui_tabs_start_tab('mode', 'environ');
 		} else {#elsif ($env_setts{$a}{'type'} eq "text") {
 			my $string = $grub2def{$a};
 			$string =~ s/\"/\'/g;
-			push (@cols, '<input type="'.$env_setts{$a}{'type'}.'" value="'.$string.'" size="80" />');
+			push (@cols, '<input type="'.$env_setts{lc $a}{'type'}.'" value="'.$string.'" size="80" />');
 		}
 		print &ui_checked_columns_row(\@cols, undef, "sel", "$a");#&amp;was=$grub2def{$a}");
     }
     print &ui_columns_end();
     print &ui_links_row(\@links);
-    print &ui_form_end([ ["edit", $text{'edit'}], ["delete", $text{'delete'}] ]);
-	print "<a class=\"right\" href=\"add_env.cgi\">$text{'add'}</a>";
+	#print &ui_form_end([ ["edit", $text{'edit'}], ["delete", $text{'delete'}] ]);
+	#print &ui_form_end([	["add", $text{'add'}], ["delete", $text{'delete'}]	]);
+	print &ui_form_end([	["comment", $text{'cout'}], ["delete", $text{'delete'}]	]);
+
+	print &ui_form_start("add_env.cgi", "post");
+	print &ui_form_end([ ["add", $text{'add'}] ]);
+	#print "<a class=\"right\" href=\"add_env.cgi\">$text{'add'}</a>";
 
 #	my %grub2env = &get_grub2_env();
 #	@links = ( );
@@ -327,7 +353,7 @@ print ui_tabs_start_tab('mode', 'environ');
 print ui_tabs_end_tab('mode', 'environ');
 
 ###### other tab ######
-print ui_tabs_start_tab('mode', 'other');
+print ui_tabs_start_tab('mode', 'other');	# display settings
 
 	@links = ( );
 	push(@links, &select_all_link("disp"), &select_invert_link("disp"));
@@ -339,7 +365,7 @@ print ui_tabs_start_tab('mode', 'other');
 	my $count = 0;
 	for my $a (sort keys %display) {
 		my @cols;
-		push (@cols, '<input type="text" name="disp_name" value="'.$display{$a}{'name'}.'" />'."\n".#$count.'|'.$display{$a}{'name'}
+		push (@cols, '<input type="text" name="disp_name-'.$display{$a}{'nick'}.'" value="'.$display{$a}{'name'}.'" />'."\n".#$count.'|'.$display{$a}{'name'}
 			  #'<input type="hidden" name="disp_all" value="'.$count.'|'.$display{$a}{'displayed'}.'|'.$display{$a}{'nick'}.'|'.$display{$a}{'name'}.'" />');
 			  "");
 		#print &ui_checked_columns_row (\@cols, undef, "disp", $display{$a}{'nick'}, $display{$a}{'displayed'});#
@@ -372,8 +398,9 @@ print ui_tabs_start_tab('mode', 'files');
 print ui_tabs_end_tab('mode', 'files');
 
 ###### summary tab ######
-print ui_tabs_start_tab('mode', 'summary');
+print ui_tabs_start_tab('mode', 'summary');	# Diagnostic info.
 
+#print "dump". Dumper (%cmds). "|||";
 	#while (my ($key,$value) = each %{$grub2cfg{$sb}{$i}{'opts_vars'}}) {
 	#	$array[$key] = $value;
 	#}
@@ -533,7 +560,9 @@ print ui_tabs_end_tab('mode', 'users');
 ###### dump tab ######
 print ui_tabs_start_tab('mode', 'dump');
 
-	print "hash_grub2cfg:".Dumper(\%grub2cfg);
+my %fdiskhash = &fdiskhash();
+	print "hash_fdiskhash:". Dumper(%fdiskhash). "|||<br />\n";
+	print "hash_grub2cfg:". Dumper(\%grub2cfg). "|||<br />\n";
 
 print ui_tabs_end_tab('mode', 'dump');
 

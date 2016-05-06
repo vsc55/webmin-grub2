@@ -1,5 +1,13 @@
 # webmin-grub2
 
+
+*0.01g
+
+.Enabled edit menuentry by button
+
+.Read INI files
+
+
 *0.01f
 
 .Added manage users
