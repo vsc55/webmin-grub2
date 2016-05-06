@@ -8,6 +8,8 @@ index_install=, or <br /><br /> 2)
 index_mismatch=<p>GRUB2 is installed at <tt>$1</tt>, but the path in your configuration settings is <tt>$2</tt>.</p>
 index_noentrys=No entries yet!
 index_short=GRUB2
+index_nocfg=, or <br /><br /> 3)
+index_mkconfig=GRUB2 needs a cfg file - click <a href="$1">HERE</a> to generate it
 
 tab_files=HELP : GRUB2 Commands
 tab_entry=Menu Entries
@@ -35,6 +37,7 @@ entry_edit=click Name to Edit
 entry_inners=Inners
 
 missing=Missing $1
+cout=Comment-out
 var=Variable
 val=Value
 clear=Clear
@@ -105,3 +108,4 @@ user_super=superuser
 user_cancel=Cancel
 user_adding=Adding user `$1` with password `$2`
 
+combo_all=Click down-arrow to see all
