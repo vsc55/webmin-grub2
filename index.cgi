@@ -71,7 +71,7 @@ print ui_tabs_start(\@tabs, 'mode', 'entry');
 print ui_tabs_start_tab('mode', 'entry');
 
 	my %parsed = &divide_cfg_into_parsed_files();
-	
+	#print "display is".Dumper (%display)."||||<br />\n";
 	@links = ( );
 	push(@links, &select_all_link("d"), &select_invert_link("d"));
 	print &ui_form_start("do_entry.cgi", "get");
@@ -86,6 +86,7 @@ print ui_tabs_start_tab('mode', 'entry');
 			if ($grub2cfg{$sb}{$i}{'valid'}) {	# only show valid entries
 				my %cols;
 				$cols{'id'} = $grub2cfg{$sb}{$i}{'id'};
+				$cols{'pos'} = $grub2cfg{$sb}{$i}{'pos'};
 				if (length ($grub2cfg{$sb}{$i}{'name'}) > 40) {	# menuentry name
 					$cols{'name'} = "<a title=\"".&html_escape ($grub2cfg{$sb}{$i}{'name'})."\" href=\"edit.cgi?sub=$sb&amp;item=$i\">".(($grub2cfg{$sb}{$i}{'is_saved'}) ? "<strong>" : "").&html_escape (cutoff ($grub2cfg{$sb}{$i}{'name'}, 40, "...")).(($grub2cfg{$sb}{$i}{'is_saved'}) ? "</strong>" : "")."</a>";
 				} else {
@@ -117,7 +118,7 @@ print ui_tabs_start_tab('mode', 'entry');
 				} else {
 					$cols{'oif'} = &html_escape (substr (join (",", @{ $grub2cfg{$sb}{$i}{'opts_if'} }), 0, 5)."...");
 				}
-				if (length ($grub2cfg{$sb}{$i}{'protected'}) > 5) {	# options-unrestricted
+				if (length ($grub2cfg{$sb}{$i}{'protected'}) > 10) {	# options-unrestricted
 					$cols{'pro'} = "<span title=\"".&html_escape ($grub2cfg{$sb}{$i}{'protected'})."\">".&html_escape (substr ($grub2cfg{$sb}{$i}{'protected'}, 0, 5)."...")."</span>";
 				} else {
 					$cols{'pro'} = &html_escape ($grub2cfg{$sb}{$i}{'protected'});
@@ -159,11 +160,7 @@ print ui_tabs_start_tab('mode', 'entry');
 	print &ui_form_end([	["delete", $text{'delete'}], 	["mksaved", $text{'entry_mksaved'}], 	["edit", $text{'entry_edit'}]	]);
 
     print &ui_form_start("edit.cgi", "post");
-		#print &ui_hidden ("sub", $sb),
-		#&ui_hidden ("item", $i);
-	#print &ui_form_end([	 ["edit", $text{'entry_edit'}],	["add", $text{'add'}]	]);
 	print &ui_form_end([	 ["add", $text{'add'}]	]);
-
 
 print ui_tabs_end_tab('mode', 'entry');
 
@@ -195,8 +192,9 @@ print ui_tabs_start_tab('mode', 'environ');
 		}
 	}
 	
-	#print "grub2def is".Dumper (%grub2def)."||||";
-	#print "env_setts is".Dumper (%env_setts)."||||";
+#	print "grub2def is".Dumper (%grub2def)."||||<br />\n";
+#	print "env_setts is".Dumper (%env_setts)."||||<br />\n";
+#	print "cmds is".Dumper (%cmds)."||||<br />\n";
     @links = ( );
 	# HTML 4~
 			$jsHTML4combo.= '<script type="text/javascript">
@@ -217,8 +215,8 @@ print ui_tabs_start_tab('mode', 'environ');
 				}
 				</script>';
     push(@links, &select_all_link("sel"), &select_invert_link("sel"));
-    print &ui_form_start("do_env.cgi", "get");
-    print &ui_links_row(\@links);
+    print &ui_form_start ("do_env.cgi", "get");
+    print &ui_links_row (\@links);
     print &ui_columns_start([
 		$text{'select'},
 		$text{'var'},
@@ -319,7 +317,8 @@ print ui_tabs_start_tab('mode', 'environ');
     print &ui_links_row(\@links);
 	#print &ui_form_end([ ["edit", $text{'edit'}], ["delete", $text{'delete'}] ]);
 	#print &ui_form_end([	["add", $text{'add'}], ["delete", $text{'delete'}]	]);
-	print &ui_form_end([	["comment", $text{'cout'}], ["delete", $text{'delete'}]	]);
+	#print &ui_form_end([	["comment", $text{'cout'}], ["delete", $text{'delete'}]	]);
+	print &ui_form_end([	["delete", $text{'delete'}]	]);
 
 	print &ui_form_start("add_env.cgi", "post");
 	print &ui_form_end([ ["add", $text{'add'}] ]);

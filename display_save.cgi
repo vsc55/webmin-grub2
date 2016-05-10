@@ -46,4 +46,4 @@ our %display = %hash;
 #
 #
 #print $text{'cannot'};
-&redirect ("/grub2");
+&redirect ($return);#&redirect ("/grub2");

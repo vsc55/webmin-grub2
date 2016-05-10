@@ -32,8 +32,7 @@ my $saveit = $in{'saveit'};
 my $submit = ($in{'save'}) ? 'save' : ($in{'delete'}) ? 'delete' : 'error';
 
 &ui_print_header ($text{'index_title'}, "$text{'edit'} $text{'menuentry'}", "");
-print $text{'cannot'};
-#print "in:".Dumper(%in)."||||<br />\n",
+print "in:".Dumper(%in)."||||<br />\n";
 #	"sb is $sb<br />\n
 #	i is $i<br />\n
 #	protectit is $protectit<br />\n
@@ -46,3 +45,4 @@ print $text{'cannot'};
 #	pos is $pos<br />\n",
 #	"classes".Dumper(@classes)."||||<br />\n",
 #	"delete_classes".Dumper(@delete_classes)."||||<br />\n";
+print $text{'cannot'};
