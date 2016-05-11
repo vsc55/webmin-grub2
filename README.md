@@ -1,6 +1,11 @@
 # webmin-grub2
 
 
+*0.01h
+
+.Add menuentry with selectable classes
+
+
 *0.01g
 
 .Enabled edit menuentry by button
