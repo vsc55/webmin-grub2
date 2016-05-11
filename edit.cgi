@@ -35,10 +35,10 @@ if ($sb+$i) {	# existing
 			print &ui_table_row ($text{'edit_submenu'}, '"'.$grub2cfg{$sb}{'name'}.'"') if $sb>0;
 		my $count = 0;
 		for $c (@{ $grub2cfg{$sb}{$i}{'classes'} }) {
-			print &ui_table_row (($count==0) ? $text{'edit_class'} : '',
-				&ui_textbox ("class", $c, 20, 0, undef).
-				&ui_button ($text{'delete'}, "delete_class[$count]"));# "onChange='$onch'"));#$grub2cfg{$sb}{$i}{'classes'}{
-			$count++;
+			#print &ui_table_row (($count==0) ? $text{'edit_class'} : '',
+			#	&ui_textbox ("class", $c, 20, 0, undef).
+			#	&ui_button ($text{'delete'}, "delete_class[$count]"));# "onChange='$onch'"));#$grub2cfg{$sb}{$i}{'classes'}{
+			#$count++;
 		}
 $ins_str = sprintf (&ui_table_row ($text{'edit_class'},
 												  '<div id="div_'.$count.'">'.
@@ -55,8 +55,8 @@ $ins_str = sprintf (&ui_table_row ($text{'edit_class'},
 									&ui_button ($text{'edit_submit'}, "multiselect_submit", 0).
 								 '</div>'
 			);
-			print &ui_table_row ($text{'edit_addclass'},
-				&ui_button ($text{'add'}, "class[$count++]"));
+			#print &ui_table_row ($text{'edit_addclass'},
+			#	&ui_button ($text{'add'}, "class[$count++]"));
 		my $cnt = 0;
 		for $v (keys %{ $grub2cfg{$sb}{$i}{'opts_vars'} }) {
 			print &ui_table_row (($cnt==0) ? $text{'edit_optvar'} : '',
