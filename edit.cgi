@@ -40,6 +40,21 @@ if ($sb+$i) {	# existing
 				&ui_button ($text{'delete'}, "delete_class[$count]"));# "onChange='$onch'"));#$grub2cfg{$sb}{$i}{'classes'}{
 			$count++;
 		}
+$ins_str = sprintf (&ui_table_row ($text{'edit_class'},
+												  '<div id="div_'.$count.'">'.
+												  &ui_textbox ("class". $count++, '', 20, 0, undef)).
+													'<input type="button" id="btn_'.$count.'" name="btn_'.$count.'" value="'.$text{'delete'}.'" /></div>');
+			my @array = keys %{{ map{$_=>1} @classList }};
+			print &ui_table_row ($text{'entry_classes'},
+								 &ui_multi_select ("classes[]", \@array, \@array, 10).
+								 '<div id="new_btn">'.
+									&ui_button ("$text{'add'} $text{'edit_class'}", "multiselect_add").
+								 '</div>'.
+								 '<div id="new_box" style="visibility: hidden">'.
+									&ui_textbox ("new_class", "", 30, 0, undef).
+									&ui_button ($text{'edit_submit'}, "multiselect_submit", 0).
+								 '</div>'
+			);
 			print &ui_table_row ($text{'edit_addclass'},
 				&ui_button ($text{'add'}, "class[$count++]"));
 		my $cnt = 0;
