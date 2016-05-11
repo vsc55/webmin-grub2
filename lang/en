@@ -24,8 +24,9 @@ env_edit=Edit Environment
 env_was=Original value $1
 
 entry_id=ID
+entry_pos=Position
 entry_name=Name
-entry_sub_name=inside_Submenu
+entry_sub_name=Menu Name
 entry_classes=Classes
 entry_mods=Modules
 entry_opt_var=Options_Variables
@@ -38,11 +39,16 @@ entry_inners=Inners
 
 missing=Missing $1
 cout=Comment-out
+cout_str=REMOVED BY WEBMIN-GRUB
 var=Variable
 val=Value
 clear=Clear
 delete=Delete
 select=Select
+selall=Select All
+#deselect=Deselect
+deselall=Deselect All
+refresh=Refresh
 noversion=n/a
 add=Add new
 del=Delete this:
@@ -92,6 +98,13 @@ edit_save=Save as Default
 edit_opts_if=Option If
 edit_set=Items Set
 edit_remove=Remove menuentry
+edit_availc=Available Classes
+edit_myclass=Classes for entry
+edit_selboxhead=Available Classes
+edit_seldboxhead=Selected Classes
+edit_selboxfoot=&nbsp;
+edit_seldboxfoot=&nbsp;
+edit_submit=Submit
 
 disp_show=Displayed
 disp_item=Heading Name
@@ -108,4 +121,4 @@ user_super=superuser
 user_cancel=Cancel
 user_adding=Adding user `$1` with password `$2`
 
-combo_all=Click down-arrow to see all
+combo_all=Click down-arrow to see all;  Click Clear button to erase the selection and see all options
