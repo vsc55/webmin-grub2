@@ -19,6 +19,8 @@ tab_sum=HELP : Diagnostic Info.
 tab_disks=Disks
 tab_users=Users & Passwords
 tab_dump=file array dump
+tab_style=Styling
+tab_configs=Configuration
 
 env_edit=Edit Environment
 env_was=Original value $1
@@ -70,6 +72,7 @@ invalid=INVALID
 cannot=cannot complete action
 when= (as at $1)
 mbr=MasterBootRecord
+soon=Coming Soon...
 
 cfg_check=check
 cfg_OK=configuration is OK
@@ -105,6 +108,9 @@ edit_seldboxhead=Selected Classes
 edit_selboxfoot=&nbsp;
 edit_seldboxfoot=&nbsp;
 edit_submit=Submit
+edit_new_class=New Class Name: 
+edit_new_optvar=New Option Variable: 
+edit_deleteVar=Delete Variable & Value
 
 disp_show=Displayed
 disp_item=Heading Name
@@ -122,3 +128,5 @@ user_cancel=Cancel
 user_adding=Adding user `$1` with password `$2`
 
 combo_all=Click down-arrow to see all;  Click Clear button to erase the selection and see all options
+
+configs_file=File name
