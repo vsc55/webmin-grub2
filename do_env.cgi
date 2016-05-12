@@ -32,5 +32,5 @@ if ($in{'delete'}) {
 } elsif ($in{'comment'}) {
 	#code
 } else {
-	&redirect("");	# just retrurn
+	&redirect($return, $text{'index_short'});	# just retrurn
 }

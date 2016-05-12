@@ -9,13 +9,18 @@ use limit;	# limit virtual memory allocation
 use Config::IniFiles;
 
 our $return = &this_url();
+my $head = 	'<meta http-equiv="Content-Security-Policy" content="default-src *; style-src \'self\' \'unsafe-inline\';
+	script-src \'self\' \'unsafe-inline\' \'unsafe-eval\'
+	*.'. $ENV{"HTTP_HOST"}. ' http';
+$head.=	($ENV{"SERVER_PORT"}==443) ? "s" : "";
+$head.=	'://'. $ENV{"SERVER_NAME"}. ':'. $ENV{"SERVER_PORT"}. ' https://ajax.googleapis.com">'. "\n";
 
 # Page header
 &ui_print_header (undef, $text{'index_title'}, "", undef, 1, 1, undef,
 				 &test_cfg_button()." <br />".
-	&help_search_link ("grub2", "man", "doc", "google"), undef, undef,
+	&help_search_link ("grub2", "man", "doc", "google"), $head.
+	'<link rel="stylesheet" type="text/css" href="css/grub2.css">'. "\n", undef,
 	&text ('index_version', $version));
-
 if (!%grub2cfg) {
 	print $text{'index_either'}.' '.
 		&text ('index_modify', "$gconfig{'webprefix'}${dir_sep}config.cgi?$module_name").' '.
@@ -55,8 +60,10 @@ if (!%grub2cfg) {
 @tabs = (
 		 ['entry', 		$text{'tab_entry'}],
 		 ['environ', 	$text{'tab_environ'}],
+		 ['configs',	$text{'tab_configs'}],
 		 ['disks',		$text{'tab_disks'}],
 		 ['users', 		$text{'tab_users'}],
+		 ['style', 		$text{'tab_style'}],
 		 ['other', 		$text{'tab_other'}],
 		 ['files', 		$text{'tab_files'}],
 		 ['summary', 	$text{'tab_sum'}],
@@ -70,7 +77,7 @@ print ui_tabs_start(\@tabs, 'mode', 'entry');
 ###### entry tab ######
 print ui_tabs_start_tab('mode', 'entry');
 
-	my %parsed = &divide_cfg_into_parsed_files();
+	our %parsed = &divide_cfg_into_parsed_files();
 	#print "display is".Dumper (%display)."||||<br />\n";
 	@links = ( );
 	push(@links, &select_all_link("d"), &select_invert_link("d"));
@@ -164,10 +171,32 @@ print ui_tabs_start_tab('mode', 'entry');
 
 print ui_tabs_end_tab('mode', 'entry');
 
-###### environ tab ######
-print ui_tabs_start_tab('mode', 'environ');
+###### configs tab ######
+print ui_tabs_start_tab('mode', 'configs');
 
-#print "env_setts:". Dumper (%env_setts). "||||";
+	#print "grub2files:". Dumper (\%grub2files). "||||<br />\n";
+	#@links = ( );
+	#push(@links, &select_all_link("sel"), &select_invert_link("sel"));
+	#print &ui_form_start("display_save.cgi", "post");
+	#print &ui_links_row(\@links);
+	print &ui_columns_start([
+	#	$text{'select'},
+		$text{'configs_file'},
+#		"full",
+		], 100);
+	for (sort keys %grub2files) {
+		if ($_ ne 'src') {
+			my @cols;
+			push (@cols, '<a href="edit_file.cgi?name='.$_.'" title="'.$grub2files{$_}{'desc'}.'" />'. $_. "\n");#$parsed{"$config{'cfgd_dir'}$dir_sep$_"}
+			#push (@cols, "$config{'cfgd_dir'}$dir_sep$_");
+			print &ui_columns_row (\@cols, undef);
+			#print &ui_checked_columns_row (\@cols, undef, "sel", $a);
+		}
+	}
+	print &ui_columns_end();
+	#print &ui_links_row(\@links);
+	#print &ui_form_end([ [ "save", $text{'save'} ] ]);
+
 #    #plain open document creation here
 #    print &ui_form_start("create_server.cgi", "form-data");
 #
@@ -183,6 +212,20 @@ print ui_tabs_start_tab('mode', 'environ');
 #
 #	    print &ui_table_end();
 #    print &ui_form_end();
+
+print ui_tabs_end_tab('mode', 'configs');
+
+###### style tab ######
+print ui_tabs_start_tab('mode', 'style');
+
+	print $text{'soon'};
+	
+print ui_tabs_end_tab('mode', 'style');
+
+###### environ tab ######
+print ui_tabs_start_tab('mode', 'environ');
+
+#print "env_setts:". Dumper (%env_setts). "||||";
 
 	my %grub2def = &get_grub2_def();
 	my %grub2env = &get_grub2_env();
@@ -315,14 +358,10 @@ print ui_tabs_start_tab('mode', 'environ');
     }
     print &ui_columns_end();
     print &ui_links_row(\@links);
-	#print &ui_form_end([ ["edit", $text{'edit'}], ["delete", $text{'delete'}] ]);
-	#print &ui_form_end([	["add", $text{'add'}], ["delete", $text{'delete'}]	]);
-	#print &ui_form_end([	["comment", $text{'cout'}], ["delete", $text{'delete'}]	]);
 	print &ui_form_end([	["delete", $text{'delete'}]	]);
 
 	print &ui_form_start("add_env.cgi", "post");
 	print &ui_form_end([ ["add", $text{'add'}] ]);
-	#print "<a class=\"right\" href=\"add_env.cgi\">$text{'add'}</a>";
 
 #	my %grub2env = &get_grub2_env();
 #	@links = ( );

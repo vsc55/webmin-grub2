@@ -898,24 +898,24 @@ sub get_grub2_files
 {
 	use Config::IniFiles;
 	my %grub2files;
-	tie %grub2files, 'Config::IniFiles', ( -file => "/usr/local/webadmin/grub2/ini/webmin-grub2_files.ini",
+	tie %grub2files, 'Config::IniFiles', ( -file => "ini/webmin-grub2_files.ini",#/usr/local/webadmin/grub2/
 										 -nocase => 1,
 										 -allowcontinue => 1,
 										 -handle_trailing_comment => 1);
 	$grub2files{'src'} = "ini" if %grub2files;
 	%grub2files = (
-				   '00_header' => "is the script that loads GRUB settings from `/etc/default/grub`,
-				   including timeout, default boot entry, and others. We will talk more about these soon.",
-				   '01_users' => "users and passwords",
-				   '05_debian_theme' => "defines the background, colors and themes.
-				   The name of this script is definitely going to change to when other distributions adopt GRUB 2.",
-				   '10_linux' => "loads the menu entries for the installed distribution.",
-				   '20_memtest86+' => "loads the memtest utility.",
-				   '30_os-prober' => "is the script that will scan the hard disks for other operating systems and add them to the boot menu.",
-				   '40_custom' => "is a template that you can use to create additional entries to be added to the boot menu.",
-				   '90_persistent' => "This is a special script which copies a corresponding part of the grub.cfg file and outputs it back unchanged.
-				   This way you can modify that part of `grub.cfg` directly and the change survives the execution of grub2-mkconfig.",
-				   'src' => "original"
+				   '00_header' => {	desc => "is the script that loads GRUB settings from `/etc/default/grub`,
+						including timeout, default boot entry, and others. We will talk more about these soon."	},
+				   '01_users' => {	desc => "users and passwords"	},
+				   '05_debian_theme' => {	desc => "defines the background, colors and themes.
+						The name of this script is definitely going to change to when other distributions adopt GRUB 2."	},
+				   '10_linux' => {	desc => "loads the menu entries for the installed distribution."	},
+				   '20_memtest86+' => {	desc => "loads the memtest utility."	},
+				   '30_os-prober' => {	desc => "is the script that will scan the hard disks for other operating systems and add them to the boot menu."	},
+				   '40_custom' => {	desc => "is a template that you can use to create additional entries to be added to the boot menu."	},
+				   '90_persistent' => {	desc => "This is a special script which copies a corresponding part of the grub.cfg file and outputs it back unchanged.
+						This way you can modify that part of `grub.cfg` directly and the change survives the execution of grub2-mkconfig."	},
+				   'src' => {	desc => "original"	}
 				   ) if !keys %grub2files;
 	return %grub2files;
 }

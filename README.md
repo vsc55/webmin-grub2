@@ -3,7 +3,11 @@
 
 *0.01h
 
-.Add menuentry with selectable classes
+.New tab: Configuration
+
+.New tab: Style
+
+.Added JS to add a new class + add a new option variable
 
 
 *0.01g
