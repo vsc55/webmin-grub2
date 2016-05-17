@@ -8,6 +8,7 @@ index_install=, or <br /><br /> 2)
 index_mismatch=<p>GRUB2 is installed at <tt>$1</tt>, but the path in your configuration settings is <tt>$2</tt>.</p>
 index_noentrys=No entries yet!
 index_short=GRUB2
+index_main=GRUB2 main
 index_nocfg=, or <br /><br /> 3)
 index_mkconfig=GRUB2 needs a cfg file - click <a href="$1">HERE</a> to generate it
 
@@ -20,10 +21,11 @@ tab_disks=Disks
 tab_users=Users & Passwords
 tab_dump=file array dump
 tab_style=Styling
-tab_configs=Configuration
+tab_configs=Configuration Files
 
 env_edit=Edit Environment
 env_was=Original value $1
+env_submit=Submit
 
 entry_id=ID
 entry_pos=Position
@@ -42,13 +44,13 @@ entry_inners=Inners
 missing=Missing $1
 cout=Comment-out
 cout_str=REMOVED BY WEBMIN-GRUB
+vars=Variables
 var=Variable
 val=Value
 clear=Clear
 delete=Delete
 select=Select
 selall=Select All
-#deselect=Deselect
 deselall=Deselect All
 refresh=Refresh
 noversion=n/a
@@ -73,6 +75,7 @@ cannot=cannot complete action
 when= (as at $1)
 mbr=MasterBootRecord
 soon=Coming Soon...
+prev=Previous
 
 cfg_check=check
 cfg_OK=configuration is OK
