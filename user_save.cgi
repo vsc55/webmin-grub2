@@ -13,7 +13,8 @@ my $pass = $in{'user_pass'};
 my $cpass = $in{'user_conf'};
 my $super = int ($in{'super'});
 
-&ui_print_header ($text{'index_title'}, "$text{'save'} $text{'user'} \"$name\"", "");
+&ui_print_header ($text{'index_title'}, "$text{'save'} $text{'user'} \"$name\"", "", undef, undef, undef, undef,
+				  &returnto ("javascript: history.go(-1)", $text{'prev'}));
 print "in:". Dumper (%in). "|||";
 	
 	if (!$name) {
@@ -40,5 +41,6 @@ print "in:". Dumper (%in). "|||";
 	print &text ('user_adding', $name, $pass). "<br />\n";
 	print '<a href="backup.cgi?what='. $config{'cfg_file'}. '&return='. &this_url(). '">'.$text{'confirm'}.'</a>';
 	&error ($err) if (my $err = &recreate_cfg());
+	print &ui_hr();
 	
-&ui_print_footer ($return, $text{'index_short'});	# click to return
+&ui_print_footer ($return, $text{'index_main'});	# click to return

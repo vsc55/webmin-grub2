@@ -31,4 +31,4 @@ unlink($temp);
 &unlock_file($file);
 &webmin_log($logtype, "manual", $logname, \%in);
 
-&redirect($return, $text{'index_short'});
+&redirect($return, $text{'index_main'});

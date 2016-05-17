@@ -253,7 +253,7 @@ for my $a (@subs) {
 		}
 		my $cls = $eoptsarray{'class'};
 		my $users = $eoptsarray{'users'};
-		my $unr = ($eoptsarray{'unrestricted'}) ? $text{'cfg_open'} : $text{'cfg_close'};
+		my $unr = ($eoptsarray{'unrestricted'});
 		my $optv = $eoptsarray{'var'};
 		#print "eoptsarray is ".Dumper(\%eoptsarray);
 		#print ":options:".Dumper(\@array);
@@ -378,7 +378,7 @@ for my $a (@subs) {
 									valid =>		$valid,
 			#						options =>		$eopts,#join " ", $eopts,#join " ", %pre,
 									classes =>		$cls,
-									protected =>	$unr,
+									unrestricted =>	($eoptsarray{'unrestricted'}) ? 1 : 0,
 									users =>		$users,
 									opts_vars =>	$optv,
 									opts_if =>		$pre_if,
@@ -475,6 +475,30 @@ for my $a (@subs) {
 #=skip
 #=cut
 
+# turns list of icons into link,text,icon table
+sub config_icons
+{
+	local (@titles, @links, @icons);
+	for($i=0; $i<@_; $i++) {
+		push(@links, $_[$i]->{'link'});
+		push(@titles, $_[$i]->{'name'});
+		push(@icons, $_[$i]->{'icon'});
+	}
+	&icons_table(\@links, \@titles, \@icons, 3);
+	print "<p>\n";
+}
+
+#
+sub returnto
+{
+	my $string = "<br />\n<a class=\"btn btn-primary\" href=\"@_[0]\">";
+	$string.= "<img alt=\"<-\"";
+	#$string.= " style=\"vertical-align: text-bottom !important\"";
+	$string.= " align=middle border=0 src=$gconfig{'webprefix'}/images/left.gif>&nbsp;";
+#	$string.= "<i class=\"fa fa-arrow-left\">&nbsp;";
+	$string.= "&nbsp;". &text ('main_return', @_[1]). "</a>";
+	return $string;
+}
 #
 # gets environment
 #

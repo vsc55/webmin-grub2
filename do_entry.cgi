@@ -26,7 +26,7 @@ if ($in{'edit'}) {
 #	$count++;
 }
 
-&ui_print_header($title, $text{'manual_title'}, "");
+&ui_print_header($title, $text{'manual_title'}, "", undef, undef, undef, undef, &returnto ("javascript: history.go(-1)", $text{'prev'}));
 print &text('manual_header', "<tt>$file</tt>"),"<p>\n";
 #print "in:". Dumper (%in). "||<br />\n";
 #print "id2 is:".Dumper(@id2);
@@ -140,7 +140,7 @@ if ($in{'delete'}) {
 		print $text{'no_selected'};
 		exit();
 	}
-	print 'Making "<tt>'.$id2[0]{'name'}.'</tt>" default';
+	print 'Making "<tt>'.$id2[0]{'name'}.'</tt>" default', &ui_hr();
 	#saved_entry = $id2[0]{'name'}
 }
 
@@ -162,4 +162,4 @@ print &ui_submit($text{'save'});
 print &ui_form_end();
 =cut
 
-&ui_print_footer($return, $text{'index_short'});
+&ui_print_footer($return, $text{'index_main'});

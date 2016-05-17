@@ -9,7 +9,7 @@ require './grub2-lib.pl';
 
 my $do = "$text{'edit'} $text{'user'} \"$in{'name'}\"";
 $do = "$text{'add'} $text{'user'}" if $in{'add'};
-&ui_print_header ($text{'index_title'}, "$do", "");
+&ui_print_header ($text{'index_title'}, "$do", "", undef, undef, undef, undef, &returnto ("javascript: history.go(-1)", $text{'prev'}));
 #print "in:".Dumper(%in)."||||<br />\n";
 
 	print &ui_form_start ("user_save.cgi", "post"),#"form-data"),
@@ -36,5 +36,5 @@ $do = "$text{'add'} $text{'user'}" if $in{'add'};
 		&ui_submit ($text{'save'}, "save"),
 		&ui_submit ($text{'user_cancel'}, "cancel");
 		print &ui_submit ($text{'delete'}, "delete") if $in{'edit'};
-	print &ui_form_end();
-&ui_print_footer ($return, $text{'index_short'});	# click to return
+	print &ui_form_end(), &ui_hr();
+&ui_print_footer ($return, $text{'index_main'});	# click to return

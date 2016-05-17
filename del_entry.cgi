@@ -15,4 +15,4 @@ for $a (@ids) {
 	#				"item" => $ii	});
 }
 
-&redirect ($return, $text{'index_short'});
+&redirect ($return, $text{'index_main'});

@@ -14,8 +14,9 @@ my $i = $in{'i'};
 my $id = $in{'id'};
 my $valid = $in{'valid'};
 my $pos = $in{'pos'};
-my $saveit = $in{'saveit'};
-my $submenu = $in{'submenu'};
+my $saveit = ($in{'is_saved'}) ? 1 : 0;
+my $submenu = $in{'wassubmenu'};
+my $nowsubmenu = $in{'entry_menu'};
 my $name = $in{'entry_name'};
 my @classes = split /\s/, $in{'classes[]'};
 #my @delete_classes = split /\0/, $in{'delete_class'};
@@ -26,8 +27,8 @@ for (keys %in) {	# go though each posted value
 	if (/^optvar(\d+)$/) {
 		$optvar{$1}{'var'} = $in{"optvar$1"};	# store each variable in hash
 	}
-	if (/^optvals(\d+)$/) {
-		$optvar{$1}{'valu'} = $in{"optvals$1"};
+	if (/^optval(\d+)$/) {
+		$optvar{$1}{'valu'} = $in{"optval$1"};
 	}
 }
 #my @optvars = split /\0/, $in{'optvar'};
@@ -36,14 +37,14 @@ for (keys %in) {	# go though each posted value
 #my @delete_optvals = split /\0/, $in{'delete_optval'};
 #my @sets = split /\0/, $in{'set'};
 #my @delete_sets = split /\0/, $in{'delete_set'};
-my $protectit = $in{'protectit'};
+my $unrestricted = ($in{'unrestricted'}) ? 1 : 0;
 #my $save = $in{'save'};
 #my $delete = $in{'delete'};
-my $saveit = $in{'saveit'};
 my $submit = ($in{'save'}) ? 'save' : ($in{'delete'}) ? 'delete' : 'error';
 
-&ui_print_header ($text{'index_title'}, "$text{'edit'} $text{'menuentry'}", "");
-	print "in:".Dumper(%in)."||||<br />\n";
+&ui_print_header ($text{'index_title'}, "$text{'edit'} $text{'menuentry'}", "", undef, undef, undef, undef,
+				  &returnto ("javascript: history.go(-1)", $text{'prev'}));
+	print "in:".Dumper(%in)."||||<br /><br />\n";
 	#"sb is $sb<br />\n
 	#i is $i<br />\n
 	#protectit is $protectit<br />\n
@@ -54,33 +55,39 @@ my $submit = ($in{'save'}) ? 'save' : ($in{'delete'}) ? 'delete' : 'error';
 	#valid is $valid<br />\n
 	#saveit is $saveit<br />\n
 	#pos is $pos<br />\n",
-	print "was:". Dumper ($grub2cfg{$sb}{$i}). "||||<br />\n";
-	if ($submenu ne $grub2cfg{$sb}{'name'}) {
+	print "was:". Dumper ($grub2cfg{$sb}{$i}). "||||<br /><br />\n" if $in{'edit'};
+	if ($submenu ne $nowsubmenu) {
 		$sb = keys %grub2cfg;
 		$i = 0;
-		$grub2cfg{$sb}{'name'} = $submenu;	# create new submenu
+		$grub2cfg{$sb}{'name'} = $nowsubmenu;	# create new submenu
 		$grub2cfg{$sb}{'valid'} = ($name) ? 1 : 0;	#####
 	}
 	$grub2cfg{$sb}{$i}{'valid'} = ($name) ? 1 : 0;	#####
 	$grub2cfg{$sb}{$i}{'name'} = $name;	# set name in hash (sub,item,name)
-	$grub2cfg{$sb}{$i}{'saveit'} = $saveit;	# set name in hash (sub,item,saveit)
-	$grub2cfg{$sb}{$i}{'protected'} = $protectit;	# set name in hash (sub,item,protected)
-	$grub2cfg{$sb}{$i}{'pos'} = "'$sb > $i'";
+	$grub2cfg{$sb}{$i}{'is_saved'} = $saveit;	# set name in hash (sub,item,saveit)
+	$grub2cfg{$sb}{$i}{'unrestricted'} = $unrestricted;	# set name in hash (sub,item,protected)
+	$grub2cfg{$sb}{$i}{'pos'} = sprintf ("%01d > %02d", $sb, $i);
 	for (keys %optvar) {
-		$grub2cfg{$sb}{$i}{'opts_vars'} = $optvar{$_}{'var'};	# add variable in hash (sub,item,opts_vars)
-		$grub2cfg{$sb}{$i}{'opts_vars'}{$optvar{$_}{'var'}} = $optvar{$_}{'valu'}; # add variable value in var hash (sub,item,opts_vars)
+		$grub2cfg{$sb}{$i}{'opts_vars'} = {	$optvar{$_}{'var'}, $optvar{$_}{'valu'}	};	# add variable in hash (sub,item,opts_vars)
+		#$grub2cfg{$sb}{$i}{'opts_vars'}{$optvar{$_}{'var'}} = $optvar{$_}{'valu'}; # add variable value in var hash (sub,item,opts_vars)
 	}
+	$grub2cfg{$sb}{$i}{'classes'} = ();	# empty classes first
 	for (@classes) {
-		push (@{ $grub2cfg{$sb}{$i}{'classes'} }, $_);	# put each class in array inside hash (sub,item,classes)
+		push (@{ $grub2cfg{$sb}{$i}{'classes'} }, $_) if $_;	# put each class in array inside hash (sub,item,classes)
 	}
+	$grub2cfg{$sb}{$i}{'opts_if'} = "";	# empty opts_if first
 	for (@optifs) {
-		push (@{ $grub2cfg{$sb}{$i}{'opts_if'} }, $_);	# put each condition in array inside hash (sub,item,opts_if)
+		push (@{ $grub2cfg{$sb}{$i}{'opts_if'} }, $_) if $_;	# put each condition in array inside hash (sub,item,opts_if)
 	}
+	$grub2cfg{$sb}{$i}{'users'} = ();	# empty users first
 	for (@users) {
-		push (@{ $grub2cfg{$sb}{$i}{'users'} }, $_);	# put each user in array inside hash (sub,item,users)
+		push (@{ $grub2cfg{$sb}{$i}{'users'} }, $_) if $_;	# put each user in array inside hash (sub,item,users)
 	}
 #	"classes".Dumper(@classes)."||||<br />\n",
 #	"delete_classes".Dumper(@delete_classes)."||||<br />\n";
-	print "now:". Dumper ($grub2cfg{$sb}{$i}). "||||<br />\n";
+	print "now:". Dumper ($grub2cfg{$sb}{$i}). "||||<br /><br />\n";
 	print $text{'cannot'};
-&ui_print_footer ($return, $text{'index_short'});	# click to return
+#print 'returnHere:'. Dumper (@returnHere). "||||<br />\n";
+#print 'returnHere ref:'. Dumper (\@returnHere). "||||<br />\n";
+print &ui_hr();
+&ui_print_footer ($return, $text{'index_main'});	# click to return

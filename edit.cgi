@@ -9,19 +9,23 @@ my $sb = $in{'sub'};
 my $i = $in{'item'};
 my $heading = ($sb+$i) ? $text{'edit'} : $text{'add'};
 
-&ui_print_header (	$text{'index_title'}, "$heading $text{'menuentry'}", "", undef, undef, undef, undef, undef,
+&ui_print_header (	$text{'index_title'}, "$heading $text{'menuentry'}", "", undef, undef, undef, undef,
+				  &returnto ("javascript: history.go(-1)", $text{'prev'}),
 				  '<link rel="stylesheet" type="text/css" href="css/grub2.css">'. "\n"	);
+#print 'returnHere:'. Dumper (@returnHere). "||||<br />\n";
+#print 'returnHere ref:'. Dumper (\@returnHere). "||||<br />\n";
 
 if ($sb+$i) {	# existing
 	
 	print &ui_form_start ("edit_save.cgi", "post"),#"form-data"),
 		&ui_hidden ("sb", $sb),# "\n",
 		&ui_hidden ("i", $i),
+		&ui_hidden ("edit", ($sb+$i) ? 1 : 0),
 		&ui_hidden ("valid", $grub2cfg{$sb}{$i}{'valid'}),
 		&ui_hidden ("id", $grub2cfg{$sb}{$i}{'id'}),
 		&ui_hidden ("saveit", $grub2cfg{$sb}{$i}{'is_saved'}),
-		&ui_hidden ("pos", "'$sb>$i'"),
-		&ui_hidden ("submenu", $grub2cfg{$sb}{'name'}),
+		&ui_hidden ("pos", sprintf ("%01d > %02d", $sb, $i)),
+		&ui_hidden ("wassubmenu", $grub2cfg{$sb}{'name'}),
 		&ui_table_start ($text{'edit_entry'}, "width=100%", 2);#, \@tds)
 			print &ui_table_row ($text{'invalid'}, "") if $grub2cfg{$sb}{$i}{'valid'}!=1;
 			print &ui_table_row ($text{'edit_id'}, $grub2cfg{$sb}{$i}{'id'});
@@ -99,11 +103,11 @@ if ($sb+$i) {	# existing
 								&ui_button ($text{'cancel'}, "optvar_cancel", 0).
 							'</div>');
 # protection:
+			my $unr = ($grub2cfg{$sb}{$i}{'unrestricted'}) ? $text{'checked'} : $text{'unchecked'};
 			print &ui_table_row ($text{'edit_protect'},
-				&ui_checkbox ("protectit", ($grub2cfg{$sb}{$i}{'protected'}eq"true"),
-					'&nbsp;('.&text ('env_was', "").': '.
-					(($grub2cfg{$sb}{$i}{'protected'}eq"true") ? $text{'checked'} : $text{'unchecked'}).')',
-					($grub2cfg{$sb}{$i}{'protected'}eq"true")));
+				&ui_checkbox ("unrestricted", ($unr) ? 1 : 0,
+					'&nbsp;('. &text ('env_was', ""). ': '.	$unr. ')',
+					($grub2cfg{$sb}{$i}{'unrestricted'})));
 # option conditions:
 		if ($grub2cfg{$sb}{$i}{'opts_if'}) {
 			my $cntoif = 0;
@@ -132,6 +136,7 @@ if ($sb+$i) {	# existing
 } else {	# new entry
 	
 	print &ui_form_start ("edit_save.cgi", "post"),#"form-data"),
+		&ui_hidden ("edit", ($sb+$i) ? 1 : 0),
 		&ui_table_start ($text{'edit_entry'}, "width=100%", 2);#, \@tds)
 			print &ui_table_row ($text{'edit_name'},
 				&ui_textbox ("entry_name", $name, 80, 0, undef));# "onChange='$onch'"));
@@ -201,7 +206,7 @@ if ($sb+$i) {	# existing
 							'</div>');
 # protection:
 			print &ui_table_row ($text{'edit_protect'},
-				&ui_checkbox ("protectit", $protected));
+				&ui_checkbox ("unrestricted", 1));
 		print &ui_table_end(),
 		&ui_submit ($text{'save'}, "save"),
 		&ui_submit ($text{'cancel'}, "cancel"),
@@ -347,4 +352,5 @@ print '<script type="text/javascript">
 			}
 	</script>'. "\n";
 
-&ui_print_footer ("$return", $text{'index_short'});	# click to return
+print "<br />\n", &ui_hr();
+&ui_print_footer ($return, $text{'index_main'});	# click to return

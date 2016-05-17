@@ -5,21 +5,26 @@
 require './grub2-lib.pl';
 &ReadParse();
 
-#	&ui_print_header($title, "$text{'env_edit'} $text{'env_var'} \"$var\"", "");
-#	print "$text{'env_edit'} $text{'env_var'} <tt>$var</tt>", "<p>\n";
+my @array = split /\0/, $in{'sel'};
+	
 if ($in{'delete'}) {
-	for my $a (split /\0/, $in{'d'}) {
-		print "deleting $a|||<br />\n";
-		&remove_an_env ($a, \%grub2def);
-	}
+
+	&ui_print_header ($title, "$in{'delete'} $text{'tab_environ'} $text{'var'}", "", undef, undef, undef, undef,
+					  &returnto ("javascript: history.go(-1)", $text{'prev'})) if scalar (@array)==1;
+	&ui_print_header ($title, "$in{'delete'} $text{'tab_environ'} $text{'vars'}", "", undef, undef, undef, undef,
+					  &returnto ("javascript: history.go(-1)", $text{'prev'})) if scalar (@array)!=1;
+	#	print "$text{'env_edit'} $text{'env_var'} <tt>$var</tt>", "<p>\n";
+#	print "in:". Dumper (%in). "|||<br /><br />\n";
+	
+		for my $a (@array) {
+			print "deleting $a|||<br />\n";
+			&remove_an_env ($a, \%grub2def);
+		}
+	print &ui_hr();
+	&ui_print_footer ("$return", $text{'index_main'});	# click to return
+
 } elsif ($in{'edit'}) {
-#	my @all = split /\&was=/, $in{'sel'};	# manually separate post var, was
-#	my $var = $all[0];
-#	my $was = $all[1];
-#	
-#	&ui_print_header($title, "$text{'env_edit'} $text{'env_var'} \"$var\"", "");
-#	print "$text{'env_edit'} $text{'env_var'} <tt>$var</tt>", "<p>\n";
-#	
+
 #	# textbox form
 #	print &ui_form_start("edit_save.cgi", "form-data");
 #		print &ui_hidden("was", $was), "\n",
@@ -28,9 +33,23 @@ if ($in{'delete'}) {
 #			&ui_submit($text{'save'});
 #	print &ui_form_end();
 #	
-#	&ui_print_footer("$return", $text{'index_short'});	# click to return
-} elsif ($in{'comment'}) {
-	#code
+
+} elsif ($in{'save'}) {
+
+	&ui_print_header ($title, "$in{'save'} $text{'env_var'}", "", undef, undef, undef, undef, &returnto ("javascript: history.go(-1)", $text{'prev'}));
+
+		for my $a (@array) {
+			print "deleting $a|||<br />\n";
+			&remove_an_env ($a, \%grub2def);
+		}
+	print &ui_hr();
+	&ui_print_footer ("$return", $text{'index_main'});	# click to return
+
 } else {
-	&redirect($return, $text{'index_short'});	# just retrurn
+
+	&ui_print_header ($title, "$in{'delete'} $text{'env_var'} \"$var\"", "", undef, undef, undef, undef,
+					  &returnto ("javascript: history.go(-1)", $text{'prev'}));
+	print $text{'cannot'},
+	print &ui_hr();
+	&redirect ($return, $text{'index_main'});	# just retrurn
 }
