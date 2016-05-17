@@ -1,6 +1,15 @@
 # webmin-grub2
 
 
+*0.01i
+
+.Converted tabs into icons (separate files)
+
+.Better navigation
+
+.Adjusting environment options
+
+
 *0.01h
 
 .New tab: Configuration
