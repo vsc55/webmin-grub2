@@ -9,15 +9,15 @@ use limit;	# limit virtual memory allocation
 #use Config::IniFiles;
 
 our @returnHere = (	&this_url(), $text{'tab_entry'}	);
-my $head = 	'<meta http-equiv="Content-Security-Policy" content="default-src *; style-src \'self\' \'unsafe-inline\';
-	script-src \'self\' \'unsafe-inline\' \'unsafe-eval\'
-	*.'. $ENV{"HTTP_HOST"}. ' http';
-$head.=	($ENV{"SERVER_PORT"}==443) ? "s" : "";
-$head.=	'://'. $ENV{"SERVER_NAME"}. ':'. $ENV{"SERVER_PORT"}. ' https://ajax.googleapis.com">'. "\n";
+#my $head = 	'<meta http-equiv="Content-Security-Policy" content="default-src *; style-src \'self\' \'unsafe-inline\';
+#	script-src \'self\' \'unsafe-inline\' \'unsafe-eval\'
+#	*.'. $ENV{"HTTP_HOST"}. ' http';
+#$head.=	($ENV{"SERVER_PORT"}==443) ? "s" : "";
+#$head.=	'://'. $ENV{"SERVER_NAME"}. ':'. $ENV{"SERVER_PORT"}. ' https://ajax.googleapis.com">'. "\n";
 
 # Page header
 &ui_print_header (undef, "$text{'index_title'} - $text{'tab_entry'}", "", undef, 1, 1, undef,
-				 &returnto ("javascript: history.go(-1)", $text{'prev'}), $head.
+				 &returnto ("javascript: history.go(-1)", $text{'prev'}), #$head.
 	'<link rel="stylesheet" type="text/css" href="css/grub2.css">'. "\n", undef,
 	&text ('index_version', $version));
 if (!%grub2cfg) {
@@ -116,9 +116,13 @@ if (!%grub2cfg) {
 	print &ui_columns_end();
 	print &ui_links_row(\@links);
 	print &ui_form_end([	["delete", $text{'delete'}], 	["mksaved", $text{'entry_mksaved'}], 	["edit", $text{'entry_edit'}]	]);
-
-    print &ui_form_start("edit.cgi", "post");
-	print &ui_form_end([	 ["add", $text{'add'}]	]), &ui_hr();
-print 'return1:'. Dumper (@returnHere). "||||<br />\n";
-print 'return1 ref:'. Dumper (\@returnHere). "||||<br />\n";
+	print &ui_hr(),
+		&ui_buttons_start(),
+		&ui_buttons_row("edit.cgi", $text{'add'}, $text{'add_me'}),
+		&ui_buttons_end(),
+    #print &ui_form_start("edit.cgi", "post");
+	#print &ui_form_end([	 ["add", $text{'add'}]	]),
+	&ui_hr();
+#print 'return1:'. Dumper (@returnHere). "||||<br />\n";
+#print 'return1 ref:'. Dumper (\@returnHere). "||||<br />\n";
 &ui_print_footer ($return, $text{'index_main'});	# click to return

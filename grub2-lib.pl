@@ -475,6 +475,87 @@ for my $a (@subs) {
 #=skip
 #=cut
 
+#
+sub divide_cfg_lines
+{
+	my $line_no = 1, $b4type = "none", @parent = (), $endif = 0, $endme = 0;
+	for (split /\n/, $cfgfile) {
+		my $type = "", $more = "";
+		if (/^\s*$/) {
+			$type = "blank";
+		} elsif (/^\s*\}/ && $parent[0]!=0) {
+			$type = "end";
+			shift @parent;
+		} elsif (/^\s*function(.*)$/) {
+			$more = $1;
+			$more =~ s/^\s+|\s+$//g;
+			#$more = s/^\s//;
+			$type = "function";
+			unshift @parent, $line_no;
+		} elsif (/^\s*if/) {
+			$type = "if";
+			$more = $1 if /^\s*if\s*\[([^]]+)/;
+			$more =~ s/^\s+|\s+$//g;
+			unshift @parent, $line_no;
+		} elsif (/^\s*menuentry/) {
+			$type = "menuentry";
+			unshift @parent, $line_no;
+		} elsif ($b4type eq "function") {
+			$type = "function";
+			unshift @parent, $line_no if $parent[0]==$line_no;
+		} elsif (/^\s*###(.*)$/) {
+			$type = "comment3";
+			$more = $1;
+			$more =~ s/^\s+#|#\s+$//g;
+		} elsif (/^\s*fi/) {
+			$type = "if";
+			$more = "ending if";
+			unshift @parent, $line_no if $parent[0]==$line_no;
+		} elsif ($b4type eq "if") {
+			$type = "if";
+			$more = $_;
+			$more =~ s/^\s+|\s+$//g;# if $more;
+			unshift @parent, $line_no if $parent[0]==$line_no;
+			#$b4parent = 0;
+		} elsif ($b4type eq "menuentry") {
+			$type = "menuentry";
+			$more = $_;
+			$more =~ s/^\s+|\s+$//g;
+			unshift @parent, $line_no if $parent[0]==$line_no;#unshift @parent, $line_no if $parent[0]!=0;
+		} elsif (/^\s*#(.*)$/) {
+			$type = "comment";
+			$more = $1;
+			$more =~ s/^\s+#|#\s+$//g;
+			$more =~ s/^\s+|\s+$//g;
+		} elsif (/^\s*(\S+)\s(\S+)$/) {
+			$type = $1 if $type = "" || !$type;
+			$more = $2 if $more = "" || !$more;
+		}
+#		($b4type ne $type && $type ne "end") && (($parent[0] && $b4type eq"end" && $endif!=0) ? shift @parent : unshift (@parent, $line_no) if ($parent[0]!=$line_no)));
+		#($b4type ne $type) && ($endif==1 || $endme==1) && (unshift (@parent, $line_no) || shift @parent);
+		#if false end
+		#if true			test	if true				test	if true end
+		#if true			test	if false			test	ignore							if true end
+		if ($b4type ne $type && $type ne "end") {
+			if ($parent[0] && $b4type eq"end" && $endif!=0) {
+				shift @parent;
+			} else {
+				unshift @parent, $line_no if $parent[0]!=$line_no;
+			}
+		}
+		$hash {$line_no} = {	type => $type, b4type => $b4type, more => $more, parent => $parent[0], parents => join (", ", @parent), content => $_	};
+		if ($endif==1 || $endme==1) {
+			$type = "end";
+			shift @parent;
+			$endif = 0;
+			$endme = 0;
+		}
+		$b4type = $type;
+		++$line_no;
+	}
+	return %hash;
+}
+
 # turns list of icons into link,text,icon table
 sub config_icons
 {

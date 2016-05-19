@@ -14,7 +14,7 @@ if ($in{'delete'}) {
 	&ui_print_header ($title, "$in{'delete'} $text{'tab_environ'} $text{'vars'}", "", undef, undef, undef, undef,
 					  &returnto ("javascript: history.go(-1)", $text{'prev'})) if scalar (@array)!=1;
 	#	print "$text{'env_edit'} $text{'env_var'} <tt>$var</tt>", "<p>\n";
-#	print "in:". Dumper (%in). "|||<br /><br />\n";
+	print "in:". Dumper (%in). "|||<br /><br />\n";
 	
 		for my $a (@array) {
 			print "deleting $a|||<br />\n";
@@ -37,6 +37,7 @@ if ($in{'delete'}) {
 } elsif ($in{'save'}) {
 
 	&ui_print_header ($title, "$in{'save'} $text{'env_var'}", "", undef, undef, undef, undef, &returnto ("javascript: history.go(-1)", $text{'prev'}));
+	print "in:". Dumper (%in). "|||<br /><br />\n";
 
 		for my $a (@array) {
 			print "deleting $a|||<br />\n";

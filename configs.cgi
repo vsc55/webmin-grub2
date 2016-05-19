@@ -26,6 +26,15 @@ if (!%grub2cfg) {
 		$text{'index_install'}.' '.
 		&text ('index_mkconfig', "make_cfg.cgi");
 }
+my %hash;
+opendir(DIR, $config{'cfgd_dir'}) or die $!;
+while (my $file = readdir(DIR)) {
+	next if ($file =~ m/^\.|(README)/);
+	#print "$file\n";
+	$hash{$file}{'exists'} = 1;
+}
+%newHash = (%grub2files, %hash); %grub2files = %newHash;
+closedir(DIR);
 	#print "grub2files:". Dumper (\%grub2files). "||||<br />\n";
 	#@links = ( );
 	#push(@links, &select_all_link("sel"), &select_invert_link("sel"));
@@ -34,6 +43,7 @@ if (!%grub2cfg) {
 	print &ui_columns_start([
 	#	$text{'select'},
 		$text{'configs_file'},
+		$text{'configs_exists'},
 #		"full",
 		], 100);
 	for (sort keys %grub2files) {
@@ -41,11 +51,16 @@ if (!%grub2cfg) {
 			my @cols;
 			push (@cols, '<a href="edit_file.cgi?name='.$_.'" title="'.$grub2files{$_}{'desc'}.'" />'. $_. "\n");#$parsed{"$config{'cfgd_dir'}$dir_sep$_"}
 			#push (@cols, "$config{'cfgd_dir'}$dir_sep$_");
+			my $status = "<img alt=\"".$grub2files{$_}{'exists'}."\" src=\"";
+			$status.= ($grub2files{$_}{'exists'}==1) ? "images${dir_sep}up.gif" : "images${dir_sep}down.gif";
+			$status.= '" />';
+			push (@cols, $status);
 			print &ui_columns_row (\@cols, undef);
 			#print &ui_checked_columns_row (\@cols, undef, "sel", $a);
 		}
 	}
-	print &ui_columns_end();
+	print &ui_columns_end(),
+		$text{'configs_how'};
 	#print &ui_links_row(\@links);
 	#print &ui_form_end([ [ "save", $text{'save'} ] ]);
 

@@ -1,6 +1,13 @@
 # webmin-grub2
 
 
+*0.01j
+
+.List all configurtion files
+
+.General polishing
+
+
 *0.01i
 
 .Converted tabs into icons (separate files)
