@@ -23,9 +23,13 @@ tab_dump=file array dump
 tab_style=Styling
 tab_configs=Configuration Files
 
+add_me=Add a custom menuentry
+add_env=Edit the ini file: `webmin-grub2_defaults.ini` in the `ini` directory, to add or change settings. <br />Example: <br /><code><blockquote><tt> [ABC] </tt> (-name in square brackets) <tt> <br /> desc=Does the alphabet </tt> (-English description) <tt> <br /> type=select </tt> (-can be: text, select, number, combo, filterselect) <tt> <br /> options=z,x,y,w </tt> (-select options, separated by commas) <tt> <br /> default=x </tt> (-initial option) <br /></tt></blockquote></code>= displays ><br /><br /><table style="width: 200px;"><tr><th> Select </th><th> Variable </th><th> Original </th><th> Value </th></tr><tr><td> [ ] </td><td> ABC </td><td> - </td><td> [w ^] </td></tr></table>
 env_edit=Edit Environment
 env_was=Original value $1
 env_submit=Submit
+env_filter=Filter by:
+env_select=Selection
 
 entry_id=ID
 entry_pos=Position
@@ -133,3 +137,5 @@ user_adding=Adding user `$1` with password `$2`
 combo_all=Click down-arrow to see all;  Click Clear button to erase the selection and see all options
 
 configs_file=File name
+configs_exists=Exists
+configs_how=Click a filename to edit file contents
