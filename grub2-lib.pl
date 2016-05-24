@@ -580,6 +580,19 @@ sub returnto
 	$string.= "&nbsp;". &text ('main_return', @_[1]). "</a>";
 	return $string;
 }
+
+#
+sub again
+{
+	my $string = "<br />\n<a class=\"btn btn-primary\" href=\"javascript: history.go(-1)\">";
+	$string.= "<img alt=\"<-\"";
+	#$string.= " style=\"vertical-align: text-bottom !important\"";
+	$string.= " align=middle border=0 src=$gconfig{'webprefix'}/images/left.gif>&nbsp;";
+#	$string.= "<i class=\"fa fa-arrow-left\">&nbsp;";
+	$string.= "&nbsp;". $text{'again'}. "</a>";
+	return $string;
+}
+
 #
 # gets environment
 #
@@ -999,6 +1012,23 @@ sub get_defaults
 }
 our %env_setts = &get_defaults();
 
+# read the configuration file
+sub get_file
+{
+	$file = @_[0];
+	if (-f $file) {
+		my $outout = do {
+			local $/ = undef;
+			open my $fh, "<", $file
+				or die "could not open $file: $!";
+			<$fh>;
+		};
+	return $outout;
+	}
+	return undef;
+}
+
+# read the ini file, if exists, otherwise use the built-in hash
 sub get_grub2_files
 {
 	use Config::IniFiles;

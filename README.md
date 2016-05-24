@@ -1,6 +1,11 @@
 # webmin-grub2
 
 
+*0.01k
+
+.Add / Edit menuentry; save as custom - appends to 40_custom or 41_custom as chosen
+
+
 *0.01j
 
 .List all configurtion files

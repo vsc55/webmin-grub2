@@ -129,7 +129,8 @@ if ($sb+$i) {	# existing
 			}
 		}
 		print &ui_table_end(),
-		&ui_submit ($text{'save'}, "save"),
+		&ui_submit ($text{'save40'}, "save40"),
+		&ui_submit ($text{'save41'}, "save41"),
 		&ui_submit ($text{'edit_remove'}, "delete"),
 	&ui_form_end();
 
@@ -183,13 +184,22 @@ if ($sb+$i) {	# existing
 								 '</div>'
 			);
 # option variables:
+			if (!keys %{ $grub2cfg{$sb}{$i}{'opts_vars'} } || keys %{ $grub2cfg{$sb}{$i}{'opts_vars'} }==0) {
+				print &ui_table_row ('',
+								'<div id="optvarRow0" style="visibility: hidden;">'.
+					&ui_textbox ("optvar0", $v, 25, 0, undef). " = ".
+					&ui_textbox ("optval0", $grub2cfg{$sb}{$i}{'opts_vars'}{$v}, 80, 0, undef).
+					&ui_button ($text{'edit_deleteVar'}, "delete_optvar0").
+	#					&ui_button ($text{'cancel'}, "cancel_optvar$cnt")
+								'</div>');
+			}
 			my $cnt = 0;
 			for $v (keys %{ $grub2cfg{$sb}{$i}{'opts_vars'} }) {	# existing vars
 				print &ui_table_row (($cnt==0) ? $text{'edit_optvar'} : '',
 								'<div id="optvarRow' .$cnt. '">'.
 					&ui_textbox ("optvar$cnt", $v, 25, 0, undef). " = ".
 					&ui_textbox ("optval$cnt", $grub2cfg{$sb}{$i}{'opts_vars'}{$v}, 80, 0, undef).
-					&ui_button ($text{'delete'}, "delete_optvar$cnt").
+					&ui_button ($text{'edit_deleteVar'}, "delete_optvar$cnt").
 #					&ui_button ($text{'cancel'}, "cancel_optvar$cnt")
 								'</div>');
 				$cnt++;
@@ -208,7 +218,8 @@ if ($sb+$i) {	# existing
 			print &ui_table_row ($text{'edit_protect'},
 				&ui_checkbox ("unrestricted", 1));
 		print &ui_table_end(),
-		&ui_submit ($text{'save'}, "save"),
+		&ui_submit ($text{'save40'}, "save40"),
+		&ui_submit ($text{'save41'}, "save41"),
 		&ui_submit ($text{'cancel'}, "cancel"),
 	&ui_form_end();
 
@@ -256,32 +267,41 @@ print '<script type="text/javascript">
 			}
 			function addItoptvar(e) {
 				var myval = document.getElementById("new_optvar").value;
-				var div = document.createElement("div");
-				var input = document.createElement("input");
-				var text = document.createTextNode (" = ");
-				var input2 = document.createElement("input");
-				var button = document.createElement("input");
-				var i = getAllSiblings (document.getElementById ("optvarRow0"), exampleFilter).length;
-				div.id = "optvarRow"+ i;
-				input.type = "text";
-				input.id = "optvar"+i;
-				input.size = 25;
-				input.value = myval;
-				input.name = "optvarname" +i;
-				/*input.className = "css-class-name";*/
-				input2.type = "text";
-				input2.id = "optval" +i;
-				input2.size = 80;
-				input2.value = "";
-				button.type = "button";
-				button.id = "delete_optvar" +i;
-				button.value = "'.$text{'edit_deleteVar'}.'";
-				div.appendChild (input);
-				div.appendChild (text);
-				div.appendChild (input2);
-				div.appendChild (button);
-				document.getElementById("optvarRow0").parentNode.appendChild(div);
+				if (document.getElementById ("optvarRow0")) {
+					var div = document.createElement("div");
+					var input = document.createElement("input");
+					var text = document.createTextNode (" = ");
+					var input2 = document.createElement("input");
+					var button = document.createElement("input");
+					var i = getAllSiblings (document.getElementById ("optvarRow0"), exampleFilter).length;
+					div.id = "optvarRow"+ i;
+					input.type = "text";
+					input.id = "optvar"+i;
+					input.size = 25;
+					input.value = myval;
+					input.name = "optvar" +i;
+					input.className = "ui_textbox";
+					input2.type = "text";
+					input2.id = "optval" +i;
+					input2.name = "optval" +i;
+					input2.size = 80;
+					input2.value = "";
+					input2.className = "ui_textbox";
+					button.type = "button";
+					button.id = "delete_optvar" +i;
+					button.name = "delete_optvar" +i;
+					button.value = "'.$text{'edit_deleteVar'}.'";
+					button.className = "ui_button";
+					div.appendChild (input);
+					div.appendChild (text);
+					div.appendChild (input2);
+					div.appendChild (button);
+					document.getElementById("optvarRow0").parentNode.appendChild(div);
+				} else {
+					document.getElementById("optvar0").value = myval;
+				}
 				revertOptVar(e);
+/*				alert("adding..."+ myval);*/
 			}
 			function revertOptVar(e) {
 				document.getElementById("new_box_optvar").style.visibility = "hidden";
@@ -334,17 +354,17 @@ print '<script type="text/javascript">
 						if (node === nameElem || node === document.getElementById("new_class")) {
 							addIt();
 							return false;
-						}
-						if (node === nameElemoptvar || node === document.getElementById("new_optvar")) {
+						} else if (node === nameElemoptvar || node === document.getElementById("new_optvar")) {
 							addItoptvar();
-							return false;
+				/*alert("1 ok");*/
+							e.preventDefault;
+							/*return false;*/
 						}
 					case 27:	/*	ESCAPE key	*/
 						if (node === nameElem || node === document.getElementById("new_class")) {
 							revertClass();
 							return false;
-						}
-						if (node === nameElemoptvar || node === document.getElementById("new_optvar")) {
+						} else if (node === nameElemoptvar || node === document.getElementById("new_optvar")) {
 							revertOptVar();
 							return false;
 						}
